@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Learnable — get credentialed in anything</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{--blue:#2563EB;--blueDeep:#1E40AF;--navy:#0F1E3D;--ink:#1B2942;--slate:#5A6B8C;--line:#E4EAF5;--tint:#F4F8FF;--tint2:#EAF2FF}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:#fff}
+  h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.02em;color:var(--navy)}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-family:Inter;border:none;border-radius:11px;cursor:pointer;transition:transform .15s,filter .15s}
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  .btn-primary{color:#fff;background:linear-gradient(180deg,#3B82F6,#2563EB);box-shadow:0 10px 24px -10px rgba(37,99,235,.6);padding:13px 22px;font-size:15px}
+  .btn-ghost{color:var(--blueDeep);background:#fff;border:1px solid var(--blue);padding:11px 18px;font-size:14px}
+  .btn-sm{padding:9px 16px;font-size:14px}
+  input,textarea{width:100%;margin-top:7px;padding:12px 14px;font-size:15px;font-family:Inter;color:var(--ink);background:#FBFCFF;border:1px solid var(--line);border-radius:11px;outline:none}
+  input:focus,textarea:focus{border-color:var(--blue)}
+  label{font-size:13px;font-weight:600;color:var(--navy)}
+  nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .navrow{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+  .brand{display:flex;align-items:center;gap:9px;cursor:pointer}
+  .brand b{font-family:'Plus Jakarta Sans';font-weight:800;font-size:21px;color:var(--navy)}
+  .hero{background:radial-gradient(1000px 460px at 50% -10%,#DCE9FF 0%,rgba(244,248,255,0) 60%),#fff;padding:56px 0 50px;text-align:center}
+  .pill{display:inline-flex;gap:7px;align-items:center;font-size:13px;font-weight:600;color:var(--blue);background:var(--tint2);border:1px solid var(--line);padding:6px 14px;border-radius:999px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px}
+  .gencard{max-width:600px;margin:26px auto 0;padding:22px;box-shadow:0 30px 70px -36px rgba(37,99,235,.45)}
+  .section{padding:54px 0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .eyebrow{font-family:'JetBrains Mono';font-size:12px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;text-align:center}
+  .h2{text-align:center;font-size:clamp(24px,3.6vw,32px);margin:10px auto 0;max-width:640px}
+  .val{padding:20px;border:1px solid var(--line);border-radius:16px;background:#fff}
+  .val .ic{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:var(--tint2);color:var(--blue);margin-bottom:12px}
+  .navy{background:linear-gradient(160deg,#1B3C72,#0C1E40);color:#fff}
+  .progGrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:36px;align-items:start;padding:24px 0 80px}
+  .mod{display:flex;align-items:center;gap:14px;padding:15px 16px;cursor:pointer;background:none;border:none;width:100%;text-align:left}
+  .mod:hover{background:#F7FAFF}
+  .chip{font-size:13px;color:var(--blueDeep);background:var(--tint2);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+  .overlay{position:fixed;inset:0;background:rgba(15,30,61,.5);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;z-index:50}
+  .modal{width:100%;max-width:440px;background:#fff;border-radius:16px;padding:26px;position:relative}
+  .x{position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--slate);font-size:20px}
+  .cert{background:#fff;border:2px solid var(--blue);border-radius:10px;padding:34px 30px;text-align:center;position:relative}
+  .cert .inner{position:absolute;inset:9px;border:1px solid var(--tint2);border-radius:6px;pointer-events:none}
+  .muted{color:var(--slate)}
+  footer{background:var(--navy);color:#fff;padding:34px 0 24px;margin-top:10px}
+  .err{color:#C23B22;font-size:13px;margin-top:10px}
+  @media(max-width:860px){.grid3,.grid2,.progGrid{grid-template-columns:1fr}.navlinks{display:none}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const api = (url, opts={}) => fetch(url, { credentials:"include", headers:{ "Content-Type":"application/json" }, ...opts })
+  .then(async r => { const d = await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||"Something went wrong"); return d; });
+
+function Seal({size=120}){
+  const leaves=[];[-58,-40,-22,-6,10].forEach((deg,i)=>{const len=14-i*0.6;[-1,1].forEach(side=>{
+    const a=(side===-1?-90-deg:-90+deg)*Math.PI/180,cx=66+Math.cos(a)*40,cy=66+Math.sin(a)*40;
+    leaves.push(<ellipse key={i+''+side} cx={cx} cy={cy} rx={len} ry={5.4} transform={`rotate(${a*180/Math.PI+(side===-1?-28:28)} ${cx} ${cy})`} fill="url(#b)"/>);});});
+  return (<svg width={size} height={size} viewBox="0 0 132 132">
+    <defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#93C0FF"/><stop offset="50%" stopColor="#2563EB"/><stop offset="100%" stopColor="#1E3FA8"/></linearGradient>
+    <radialGradient id="c" cx="38%" cy="30%" r="80%"><stop offset="0%" stopColor="#2E62D6"/><stop offset="100%" stopColor="#13286A"/></radialGradient></defs>
+    <circle cx="66" cy="66" r="56" fill="none" stroke="url(#b)" strokeWidth="2.4"/>{leaves}
+    <circle cx="66" cy="66" r="34" fill="url(#c)"/>
+    <path d="M 56 67 L 63 75 L 78 57" transform="translate(0,0)" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>);
+}
+
+function App(){
+  const [me,setMe]=useState(null);
+  const [view,setView]=useState("landing");      // landing | program | verify
+  const [goal,setGoal]=useState(""); const [why,setWhy]=useState("");
+  const [program,setProgram]=useState(null); const [busy,setBusy]=useState(false); const [err,setErr]=useState("");
+  const [auth,setAuth]=useState(null);           // null | 'login' | 'signup'
+  const [cert,setCert]=useState(null);           // {credId,...}
+  const [cv,setCv]=useState(null); const [showCv,setShowCv]=useState(false);
+  const [verify,setVerify]=useState(null);
+
+  useEffect(()=>{ api("/api/auth/me").then(d=>setMe(d.user)).catch(()=>{});
+    const p=new URLSearchParams(location.search);
+    if(p.get("verify")){ setView("verify"); api("/api/verify/"+p.get("verify")).then(setVerify).catch(()=>setVerify({valid:false})); }
+    else if(p.get("reference")){ api("/api/payments/verify?reference="+p.get("reference")).then(d=>{ if(d.paid) setCert({credId:d.credId}); }).catch(()=>{}); }
+  },[]);
+
+  async function generate(){
+    if(!goal.trim())return; setErr(""); setBusy(true);
+    try{ const d=await api("/api/programs",{method:"POST",body:JSON.stringify({goal,why})}); setProgram(d.program); setView("program"); window.scrollTo(0,0); }
+    catch(e){ setErr(e.message);} setBusy(false);
+  }
+  async function enroll(){
+    if(!me){ setAuth("signup"); return; }
+    try{ const d=await api(`/api/programs/${program.id}/enroll`,{method:"POST"});
+      if(d.devPaid) setCert({credId:d.credId});
+      else if(d.authorization_url) location.href=d.authorization_url;
+    }catch(e){ alert(e.message);} }
+  async function genCv(){ setShowCv(true); setCv(null);
+    try{ const d=await api(`/api/programs/${program.id}/cv`,{method:"POST"}); setCv(d.cv);}catch(e){ setCv({bullets:[e.message]});} }
+
+  const value=[["A curriculum built for you","Sequenced to your goal — not an off-the-shelf course."],
+    ["A verifiable certificate","Unique ID and a public verify page employers can check."],
+    ["Alumni network access","Peers and mentors credentialed in your field."],
+    ["CV & interview prep","Resume bullets and a LinkedIn blurb from your work."],
+    ["A capstone that ships","A real deliverable tied to why you started."],
+    ["Lifetime credential page","Your record stays live as you grow."]];
+
+  /* ---------- VERIFY VIEW ---------- */
+  if(view==="verify") return (
+    <div>
+      <Nav me={me} onBrand={()=>{location.href="/";}} onAuth={setAuth} setMe={setMe}/>
+      <div className="wrap" style={{maxWidth:560,padding:"60px 22px",textAlign:"center"}}>
+        {!verify? <p className="muted">Checking credential…</p> :
+         verify.valid? <div className="card" style={{padding:30}}>
+            <div style={{display:"grid",placeItems:"center"}}><Seal size={92}/></div>
+            <div className="eyebrow" style={{marginTop:10}}>Verified credential</div>
+            <h2 style={{margin:"6px 0"}}>{verify.name}</h2>
+            <p className="muted">earned the credential in</p>
+            <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:700,color:"var(--blue)",fontSize:18}}>{verify.programTitle}</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",margin:"16px 0"}}>{(verify.skills||[]).map((s,i)=><span key={i} className="chip">{s}</span>)}</div>
+            <div className="mono muted" style={{fontSize:12}}>Issued {new Date(verify.issuedAt).toLocaleDateString()}</div>
+          </div>
+         : <div className="card" style={{padding:30}}><h2>Not found</h2><p className="muted">No credential matches that ID.</p></div>}
+      </div>
+    </div>);
+
+  /* ---------- PROGRAM VIEW ---------- */
+  if(view==="program" && program) return (
+    <div>
+      <Nav me={me} onBrand={()=>setView("landing")} onAuth={setAuth} setMe={setMe}/>
+      <div className="wrap progGrid">
+        <div>
+          <div className="mono" style={{fontSize:12,letterSpacing:"1.5px",color:"var(--blue)",marginBottom:10}}>{(program.level||"").toUpperCase()} · {program.totalHours}H · {(program.modules||[]).length} MODULES</div>
+          <h1 style={{fontSize:"clamp(26px,4vw,38px)",margin:"0 0 10px"}}>{program.title}</h1>
+          <p style={{fontSize:17,margin:"0 0 8px"}}>{program.subtitle}</p>
+          <p className="muted" style={{lineHeight:1.6,maxWidth:560}}>{program.summary}</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8,margin:"22px 0 30px"}}>{(program.skills||[]).map((s,i)=><span key={i} className="chip">{s}</span>)}</div>
+
+          <h3>Curriculum</h3>
+          <div className="card" style={{overflow:"hidden",marginBottom:30}}>
+            {(program.modules||[]).map((m,i)=><Module key={i} m={m} i={i} last={i===program.modules.length-1}/>)}
+          </div>
+
+          <h3>Capstone</h3>
+          <div className="navy" style={{borderRadius:14,padding:"20px 22px",marginBottom:30}}>
+            <b style={{fontFamily:"'Plus Jakarta Sans'",fontSize:18}}>{program.capstone?.title}</b>
+            <p style={{margin:"8px 0 0",color:"#A8BFE6",lineHeight:1.6}}>{program.capstone?.description}</p>
+          </div>
+
+          <h3>Turn it into a career move</h3>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            <button className="btn btn-ghost" onClick={genCv}>Generate CV bullets</button>
+            <button className="btn btn-ghost" onClick={enroll}>{me?"Get my certificate":"Sign up to enroll"}</button>
+          </div>
+        </div>
+
+        <aside style={{position:"sticky",top:74}}>
+          <div className="card" style={{overflow:"hidden"}}>
+            <div className="navy" style={{padding:"20px 22px"}}>
+              <span style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:34}}>$35</span>
+              <span style={{fontSize:13,color:"#A8BFE6",marginLeft:8}}>one time · lifetime access</span>
+            </div>
+            <div style={{padding:"6px 20px 18px"}}>
+              {value.map((v,i)=><div key={i} style={{padding:"10px 0",borderBottom:i<value.length-1?"1px solid var(--line)":"none"}}>
+                <div style={{fontWeight:600,fontSize:13.5,color:"var(--navy)"}}>{v[0]}</div></div>)}
+              <button className="btn btn-primary" style={{width:"100%",marginTop:14}} onClick={enroll}>Enroll for $35</button>
+              <div className="muted" style={{textAlign:"center",fontSize:12,marginTop:10}}>7-day refund · cancel anytime</div>
+            </div>
+          </div>
+          <button className="btn" style={{background:"none",color:"var(--slate)",marginTop:12,fontSize:13}} onClick={()=>setView("landing")}>← Start a different program</button>
+        </aside>
+      </div>
+      {showCv && <CvModal cv={cv} onClose={()=>setShowCv(false)}/>}
+      {cert && <CertModal cert={cert} program={program} me={me} onClose={()=>setCert(null)}/>}
+      {auth && <AuthModal mode={auth} onClose={()=>setAuth(null)} onAuth={u=>{setMe(u);setAuth(null);}}/>}
+    </div>);
+
+  /* ---------- LANDING ---------- */
+  return (
+    <div>
+      <Nav me={me} onBrand={()=>setView("landing")} onAuth={setAuth} setMe={setMe}/>
+      <section className="hero"><div className="wrap" style={{maxWidth:760}}>
+        <span className="pill">✦ Powered by Claude</span>
+        <h1 style={{fontSize:"clamp(34px,6vw,54px)",lineHeight:1.05,margin:"18px 0 16px"}}>Get credentialed in <span style={{color:"var(--blue)"}}>anything.</span></h1>
+        <p className="muted" style={{fontSize:18,maxWidth:520,margin:"0 auto"}}>Tell Learnable what you want to master and why. Get a personalized curriculum, a real capstone, a verifiable certificate, and the career support that makes it count — for $35.</p>
+        <div className="card gencard" style={{textAlign:"left"}}>
+          <label>What do you want to master?</label>
+          <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. financial modeling for property development"/>
+          <label style={{marginTop:16,display:"block"}}>Why does it matter to you?</label>
+          <textarea rows="2" value={why} onChange={e=>setWhy(e.target.value)} placeholder="e.g. I'm raising capital for a 353-unit estate and want to build the model myself"/>
+          {err && <div className="err">{err}</div>}
+          <button className="btn btn-primary" style={{width:"100%",marginTop:18,opacity:goal.trim()?1:.5}} disabled={!goal.trim()||busy} onClick={generate}>{busy?"Designing your program…":"Design my program — free preview"} </button>
+          <div className="muted" style={{textAlign:"center",fontSize:12.5,marginTop:12}}>See your full program before you pay a cent</div>
+        </div>
+        <div className="muted" style={{marginTop:26,fontSize:13.5}}>Designed by Claude · Build a real capstone · Employer-verifiable</div>
+      </div></section>
+
+      <section className="section"><div className="wrap">
+        <div className="eyebrow">What's included</div>
+        <h2 className="h2">One $35 payment. Everything you need to make it count.</h2>
+        <div className="grid3" style={{marginTop:32}}>
+          {value.map((v,i)=><div key={i} className="val"><div className="ic">✦</div><div style={{fontWeight:700,color:"var(--navy)",marginBottom:6}}>{v[0]}</div><div className="muted" style={{fontSize:13.5,lineHeight:1.5}}>{v[1]}</div></div>)}
+        </div>
+      </div></section>
+
+      <section className="navy section"><div className="wrap" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:18,textAlign:"center"}}>
+        {[["$35","one-time · lifetime access"],["Minutes","from idea to full curriculum"],["Capstone","a real deliverable, not a quiz"],["Verifiable","unique ID + public check"]].map((s,i)=>
+          <div key={i}><div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:30,color:"#fff"}}>{s[0]}</div><div style={{color:"#9FB6DF",fontSize:13,marginTop:4}}>{s[1]}</div></div>)}
+      </div></section>
+
+      <footer><div className="wrap" style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:12,alignItems:"center"}}>
+        <div className="brand"><Seal size={26}/><b style={{color:"#fff"}}>Learnable</b></div>
+        <div style={{color:"#8AA3CF",fontSize:12.5}}>© 2026 Learnable · hello@learnable.app</div>
+      </div></footer>
+
+      {auth && <AuthModal mode={auth} onClose={()=>setAuth(null)} onAuth={u=>{setMe(u);setAuth(null);}}/>}
+    </div>);
+}
+
+function Nav({me,onBrand,onAuth,setMe}){
+  return (<nav><div className="wrap navrow">
+    <div className="brand" onClick={onBrand}><Seal size={30}/><b>Learnable</b></div>
+    {me? <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <span className="muted" style={{fontSize:14}}>{me.name}</span>
+        <button className="btn btn-ghost btn-sm" onClick={()=>api("/api/auth/logout",{method:"POST"}).then(()=>setMe(null))}>Log out</button>
+      </div>
+     : <div style={{display:"flex",gap:10}}>
+        <button className="btn btn-ghost btn-sm" onClick={()=>onAuth("login")}>Log in</button>
+        <button className="btn btn-primary btn-sm" onClick={()=>onAuth("signup")}>Start free</button>
+      </div>}
+  </div></nav>);
+}
+
+function Module({m,i,last}){
+  const [open,setOpen]=useState(i===0);
+  return (<div style={{borderTop:i?"1px solid var(--line)":"none"}}>
+    <button className="mod" onClick={()=>setOpen(!open)}>
+      <span className="mono" style={{color:"var(--blue)",width:22}}>{String(i+1).padStart(2,"0")}</span>
+      <span style={{flex:1,fontWeight:600,color:"var(--navy)"}}>{m.title}</span>
+      <span className="muted" style={{fontSize:12.5}}>{m.hours}h</span>
+      <span className="muted">{open?"▴":"▾"}</span>
+    </button>
+    {open && <div style={{padding:"0 16px 14px 54px"}}>{(m.lessons||[]).map((l,j)=>
+      <div key={j} className="muted" style={{fontSize:14,padding:"4px 0",display:"flex",gap:9,alignItems:"center"}}><span style={{width:5,height:5,borderRadius:9,background:"var(--blue)"}}></span>{l}</div>)}</div>}
+  </div>);
+}
+
+function AuthModal({mode,onClose,onAuth}){
+  const [m,setM]=useState(mode); const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [pw,setPw]=useState(""); const [err,setErr]=useState(""); const [busy,setBusy]=useState(false);
+  async function submit(){ setErr(""); setBusy(true);
+    try{ const body=m==="signup"?{name,email,password:pw}:{email,password:pw};
+      const d=await api("/api/auth/"+m,{method:"POST",body:JSON.stringify(body)}); onAuth(d.user);
+    }catch(e){ setErr(e.message);} setBusy(false); }
+  return (<div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}>
+    <button className="x" onClick={onClose}>×</button>
+    <h2 style={{marginTop:0}}>{m==="signup"?"Create your account":"Welcome back"}</h2>
+    {m==="signup" && <><label>Name</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/></>}
+    <label style={{marginTop:14,display:"block"}}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com"/>
+    <label style={{marginTop:14,display:"block"}}>Password</label><input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="At least 8 characters"/>
+    {err && <div className="err">{err}</div>}
+    <button className="btn btn-primary" style={{width:"100%",marginTop:18}} disabled={busy} onClick={submit}>{busy?"…":(m==="signup"?"Create account":"Log in")}</button>
+    <div className="muted" style={{textAlign:"center",fontSize:13,marginTop:14}}>
+      {m==="signup"?"Already have an account? ":"New here? "}
+      <a style={{color:"var(--blue)",cursor:"pointer"}} onClick={()=>{setM(m==="signup"?"login":"signup");setErr("");}}>{m==="signup"?"Log in":"Create one"}</a>
+    </div>
+  </div></div>);
+}
+
+function CvModal({cv,onClose}){
+  return (<div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}>
+    <button className="x" onClick={onClose}>×</button>
+    <h2 style={{marginTop:0}}>CV &amp; profile prep</h2>
+    {!cv? <p className="muted">Drafting from your program…</p> : <div>
+      {cv.headline && <div style={{background:"var(--tint2)",border:"1px solid var(--line)",borderRadius:10,padding:"12px 14px",fontWeight:600,color:"var(--blueDeep)",marginBottom:14}}>{cv.headline}</div>}
+      <div className="mono" style={{fontSize:12,color:"var(--blue)",marginBottom:8}}>RESUME BULLETS</div>
+      {(cv.bullets||[]).map((b,i)=><div key={i} style={{display:"flex",gap:9,padding:"6px 0",fontSize:14,lineHeight:1.5}}><b style={{color:"var(--blue)"}}>▸</b>{b}</div>)}
+      {cv.linkedin && <><div className="mono" style={{fontSize:12,color:"var(--blue)",margin:"14px 0 8px"}}>LINKEDIN ABOUT</div>
+        <p style={{borderLeft:"3px solid var(--blue)",paddingLeft:12,margin:0,fontSize:14,lineHeight:1.6}}>{cv.linkedin}</p></>}
+    </div>}
+  </div></div>);
+}
+
+function CertModal({cert,program,me,onClose}){
+  const link=location.origin+"/?verify="+cert.credId;
+  return (<div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:460}}>
+    <button className="x" onClick={onClose}>×</button>
+    <div className="cert"><div className="inner"></div>
+      <div className="mono" style={{fontSize:11,letterSpacing:"3px",color:"var(--blue)"}}>CERTIFICATE OF COMPLETION</div>
+      <div style={{display:"grid",placeItems:"center",margin:"16px 0 12px"}}><Seal size={96}/></div>
+      <div className="muted" style={{fontSize:13}}>This certifies that</div>
+      <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:26,color:"var(--navy)",margin:"6px 0"}}>{me?.name||"You"}</div>
+      <div className="muted" style={{fontSize:13}}>has earned the credential in</div>
+      <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:700,fontSize:18,color:"var(--blue)",margin:"4px 0 18px"}}>{program?.title}</div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11.5,color:"var(--slate)",borderTop:"1px solid var(--line)",paddingTop:12}}>
+        <span>{new Date().toLocaleDateString()}</span><span className="mono">{cert.credId}</span></div>
+    </div>
+    <div className="muted" style={{textAlign:"center",fontSize:11.5,marginTop:12}}>Verify at <a href={link} style={{color:"var(--blue)"}}>{location.host}/?verify={cert.credId}</a></div>
+  </div></div>);
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
