@@ -4,7 +4,7 @@ Claude-designed credentials in anything. Tell it what you want to master and why
 personalized curriculum, a capstone, a verifiable certificate, alumni access, and CV prep — for $35.
 
 This repo is a **self-contained full-stack app**: a Node/Express backend (API + Claude proxy +
-auth + payments + certificate verification) that also serves the frontend. No Replit required.
+auth + payments + certificate verification) that also serves the frontend. 
 
 ---
 
