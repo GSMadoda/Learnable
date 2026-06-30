@@ -16,6 +16,36 @@ const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 const PROD = process.env.NODE_ENV === "production";
 const PRICE = Number(process.env.PRICE || 35);
 
+// Google OAuth
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT = `${APP_URL}/api/auth/google/callback`;
+// Email (Spaceship / Spacemail SMTP) for magic links + password resets
+const SMTP_HOST = process.env.SMTP_HOST || "mail.spacemail.com";
+const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const FROM_EMAIL = process.env.FROM_EMAIL || "Learnable <support@getlearnable.org>";
+const EMAIL_ON = !!(SMTP_USER && SMTP_PASS);
+let mailer = null;
+if (EMAIL_ON) { try { mailer = require("nodemailer").createTransport({ host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_PORT === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } }); } catch (e) { console.warn("[warn] nodemailer not available:", e.message); } }
+if (!EMAIL_ON) console.warn("[warn] SMTP not set — magic links & password resets will be returned in the API response in dev instead of emailed.");
+if (!GOOGLE_CLIENT_ID) console.warn("[warn] GOOGLE_CLIENT_ID not set — Google sign-in disabled.");
+
+async function sendEmail(to, subject, html) {
+  if (!mailer) return false;
+  try { await mailer.sendMail({ from: FROM_EMAIL, to, subject, html }); return true; }
+  catch (e) { console.error("email send failed:", e.message); return false; }
+}
+function emailShell(title, body, btnText, btnUrl) {
+  return `<div style="font-family:Inter,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1E293B">
+    <div style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:22px;color:#0B1F3A">Learnable</div>
+    <h2 style="color:#0B1F3A">${title}</h2><p style="line-height:1.6;color:#64748B">${body}</p>
+    <a href="${btnUrl}" style="display:inline-block;background:#2563EB;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:12px;margin:12px 0">${btnText}</a>
+    <p style="font-size:12px;color:#94a3b8;margin-top:18px">If you didn't request this, you can ignore this email. This link expires in 30 minutes.</p>
+    <p style="font-family:'Roboto Mono',monospace;font-size:11px;color:#94a3b8;letter-spacing:.06em;margin-top:14px">Learn it. Prove it. · support@getlearnable.org</p></div>`;
+}
+
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const anthropic = ANTHROPIC_KEY ? new Anthropic({ apiKey: ANTHROPIC_KEY }) : null;
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
@@ -86,6 +116,88 @@ app.post("/api/auth/login", (req, res) => {
 });
 app.post("/api/auth/logout", (req, res) => { res.clearCookie("token"); res.json({ ok: true }); });
 app.get("/api/auth/me", (req, res) => { const u = currentUser(req); res.json({ user: u ? fullUser(u.id) : null }); });
+
+// tells the frontend which sign-in methods are available
+app.get("/api/config", (req, res) => res.json({ google: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET), email: EMAIL_ON }));
+
+function randomHash() { return bcrypt.hashSync(crypto.randomBytes(24).toString("hex"), 10); }
+function upsertUserByEmail(email, name, googleId) {
+  email = String(email).toLowerCase();
+  let u = db.prepare("SELECT * FROM users WHERE email=?").get(email);
+  if (u) { if (googleId && !u.google_id) db.prepare("UPDATE users SET google_id=? WHERE id=?").run(googleId, u.id); return u.id; }
+  const info = db.prepare("INSERT INTO users (name,email,password_hash,google_id) VALUES (?,?,?,?)")
+    .run(name || email.split("@")[0], email, randomHash(), googleId || null);
+  return Number(info.lastInsertRowid);
+}
+
+/* ---- Google OAuth ---- */
+app.get("/api/auth/google", (req, res) => {
+  if (!GOOGLE_CLIENT_ID) return res.status(400).send("Google sign-in is not configured.");
+  const state = crypto.randomBytes(16).toString("hex");
+  res.cookie("oauth_state", state, { httpOnly: true, sameSite: "lax", secure: PROD, maxAge: 600000 });
+  res.redirect("https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID, redirect_uri: GOOGLE_REDIRECT, response_type: "code",
+    scope: "openid email profile", state, prompt: "select_account",
+  }));
+});
+app.get("/api/auth/google/callback", async (req, res) => {
+  try {
+    const { code, state } = req.query;
+    if (!code || !state || state !== req.cookies?.oauth_state) return res.redirect("/?autherror=1");
+    res.clearCookie("oauth_state");
+    const tk = await (await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET, redirect_uri: GOOGLE_REDIRECT, grant_type: "authorization_code" }) })).json();
+    if (!tk.access_token) { console.error("google token:", tk); return res.redirect("/?autherror=1"); }
+    const p = await (await fetch("https://www.googleapis.com/oauth2/v2/userinfo", { headers: { Authorization: `Bearer ${tk.access_token}` } })).json();
+    if (!p.email) return res.redirect("/?autherror=1");
+    const id = upsertUserByEmail(p.email, p.name, p.id);
+    setAuthCookie(res, signToken(fullUser(id)));
+    res.redirect("/");
+  } catch (e) { console.error("google callback:", e.message); res.redirect("/?autherror=1"); }
+});
+
+/* ---- Magic link (passwordless) ---- */
+app.post("/api/auth/magic", async (req, res) => {
+  const email = String((req.body || {}).email || "").toLowerCase().trim();
+  const name = (req.body || {}).name;
+  if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) return res.status(400).json({ error: "Enter a valid email." });
+  const id = upsertUserByEmail(email, name);
+  const token = crypto.randomBytes(24).toString("hex");
+  db.prepare("UPDATE users SET magic_token=?, magic_expires=? WHERE id=?").run(token, new Date(Date.now() + 1800000).toISOString(), id);
+  const link = `${APP_URL}/?magic=${token}`;
+  const sent = await sendEmail(email, "Your Learnable sign-in link", emailShell("Sign in to Learnable", "Click below to sign in. No password needed.", "Sign in", link));
+  res.json({ ok: true, devLink: (!sent && !PROD) ? link : undefined });
+});
+app.post("/api/auth/magic/verify", (req, res) => {
+  const token = (req.body || {}).token;
+  const u = db.prepare("SELECT * FROM users WHERE magic_token=?").get(token);
+  if (!u || !u.magic_expires || new Date(u.magic_expires).getTime() < Date.now()) return res.status(400).json({ error: "This link is invalid or has expired." });
+  db.prepare("UPDATE users SET magic_token=NULL, magic_expires=NULL WHERE id=?").run(u.id);
+  setAuthCookie(res, signToken(fullUser(u.id))); res.json({ user: fullUser(u.id) });
+});
+
+/* ---- Forgot / reset password ---- */
+app.post("/api/auth/forgot", async (req, res) => {
+  const email = String((req.body || {}).email || "").toLowerCase().trim();
+  const u = db.prepare("SELECT * FROM users WHERE email=?").get(email);
+  let devLink;
+  if (u) {
+    const token = crypto.randomBytes(24).toString("hex");
+    db.prepare("UPDATE users SET reset_token=?, reset_expires=? WHERE id=?").run(token, new Date(Date.now() + 1800000).toISOString(), u.id);
+    const link = `${APP_URL}/?reset=${token}`;
+    const sent = await sendEmail(email, "Reset your Learnable password", emailShell("Reset your password", "Click below to choose a new password.", "Reset password", link));
+    if (!sent && !PROD) devLink = link;
+  }
+  res.json({ ok: true, devLink }); // never reveal whether the email exists
+});
+app.post("/api/auth/reset", (req, res) => {
+  const { token, password } = req.body || {};
+  if (!password || String(password).length < 8) return res.status(400).json({ error: "Password must be at least 8 characters." });
+  const u = db.prepare("SELECT * FROM users WHERE reset_token=?").get(token);
+  if (!u || !u.reset_expires || new Date(u.reset_expires).getTime() < Date.now()) return res.status(400).json({ error: "This reset link is invalid or has expired." });
+  db.prepare("UPDATE users SET password_hash=?, reset_token=NULL, reset_expires=NULL WHERE id=?").run(bcrypt.hashSync(String(password), 10), u.id);
+  res.json({ ok: true });
+});
 
 // Update profile (name, avatar, education, LinkedIn, alumni visibility).
 app.put("/api/profile", requireAuth, (req, res) => {
