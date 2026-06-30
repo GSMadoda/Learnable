@@ -9,19 +9,21 @@
 <style>
   :root{--blue:#2563EB;--blueDeep:#1E40AF;--navy:#0F1E3D;--ink:#1B2942;--slate:#5A6B8C;--line:#E4EAF5;--tint:#F4F8FF;--tint2:#EAF2FF}
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:#fff}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:#fff;overflow-x:hidden}
   h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.02em;color:var(--navy)}
   .wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+  .narrow{max-width:760px}
   .mono{font-family:'JetBrains Mono',monospace}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-family:Inter;border:none;border-radius:11px;cursor:pointer;transition:transform .15s,filter .15s}
   .btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  .btn:disabled{opacity:.5;cursor:default;transform:none}
   .btn-primary{color:#fff;background:linear-gradient(180deg,#3B82F6,#2563EB);box-shadow:0 10px 24px -10px rgba(37,99,235,.6);padding:13px 22px;font-size:15px}
   .btn-ghost{color:var(--blueDeep);background:#fff;border:1px solid var(--blue);padding:11px 18px;font-size:14px}
   .btn-sm{padding:9px 16px;font-size:14px}
-  input,textarea{width:100%;margin-top:7px;padding:12px 14px;font-size:15px;font-family:Inter;color:var(--ink);background:#FBFCFF;border:1px solid var(--line);border-radius:11px;outline:none}
+  input,textarea{width:100%;margin-top:7px;padding:12px 14px;font-size:16px;font-family:Inter;color:var(--ink);background:#FBFCFF;border:1px solid var(--line);border-radius:11px;outline:none}
   input:focus,textarea:focus{border-color:var(--blue)}
   label{font-size:13px;font-weight:600;color:var(--navy)}
-  nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
   .navrow{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
   .brand{display:flex;align-items:center;gap:9px;cursor:pointer}
   .brand b{font-family:'Plus Jakarta Sans';font-weight:800;font-size:21px;color:var(--navy)}
@@ -31,25 +33,54 @@
   .gencard{max-width:600px;margin:26px auto 0;padding:22px;box-shadow:0 30px 70px -36px rgba(37,99,235,.45)}
   .section{padding:54px 0}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;text-align:center}
   .eyebrow{font-family:'JetBrains Mono';font-size:12px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;text-align:center}
   .h2{text-align:center;font-size:clamp(24px,3.6vw,32px);margin:10px auto 0;max-width:640px}
   .val{padding:20px;border:1px solid var(--line);border-radius:16px;background:#fff}
-  .val .ic{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:var(--tint2);color:var(--blue);margin-bottom:12px}
+  .val .ic{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:var(--tint2);color:var(--blue);margin-bottom:12px;font-weight:700}
   .navy{background:linear-gradient(160deg,#1B3C72,#0C1E40);color:#fff}
   .progGrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:36px;align-items:start;padding:24px 0 80px}
   .mod{display:flex;align-items:center;gap:14px;padding:15px 16px;cursor:pointer;background:none;border:none;width:100%;text-align:left}
   .mod:hover{background:#F7FAFF}
   .chip{font-size:13px;color:var(--blueDeep);background:var(--tint2);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+  .muted{color:var(--slate)}
+  .err{color:#C23B22;font-size:13px;margin-top:10px}
+  footer{background:var(--navy);color:#fff;padding:34px 0 24px;margin-top:10px}
+  /* modals */
   .overlay{position:fixed;inset:0;background:rgba(15,30,61,.5);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;z-index:50}
-  .modal{width:100%;max-width:440px;background:#fff;border-radius:16px;padding:26px;position:relative}
+  .modal{width:100%;max-width:440px;max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:26px;position:relative}
   .x{position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--slate);font-size:20px}
   .cert{background:#fff;border:2px solid var(--blue);border-radius:10px;padding:34px 30px;text-align:center;position:relative}
   .cert .inner{position:absolute;inset:9px;border:1px solid var(--tint2);border-radius:6px;pointer-events:none}
-  .muted{color:var(--slate)}
-  footer{background:var(--navy);color:#fff;padding:34px 0 24px;margin-top:10px}
-  .err{color:#C23B22;font-size:13px;margin-top:10px}
-  @media(max-width:860px){.grid3,.grid2,.progGrid{grid-template-columns:1fr}.navlinks{display:none}}
+  /* course */
+  .studybar{position:sticky;top:56px;z-index:20;background:#fff;border-bottom:1px solid var(--line);padding:10px 0}
+  .pbar{height:8px;border-radius:99px;background:var(--tint2);overflow:hidden}
+  .pbar>span{display:block;height:100%;background:linear-gradient(90deg,#3B82F6,#2563EB)}
+  .lessonrow{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;margin-bottom:8px}
+  .lessonrow:hover{background:#F7FAFF}
+  .check{width:22px;height:22px;border-radius:99px;border:2px solid var(--line);display:grid;place-items:center;flex-shrink:0;font-size:13px;color:#fff}
+  .check.done{background:var(--blue);border-color:var(--blue)}
+  .qopt{display:block;width:100%;text-align:left;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-top:8px;cursor:pointer;font-size:14px}
+  .qopt.sel{border-color:var(--blue);background:var(--tint2)}
+  .qopt.correct{border-color:#15803D;background:#ECFDF3}
+  .qopt.wrong{border-color:#C23B22;background:#FEF1EE}
+  .tutor{position:fixed;right:14px;bottom:0;width:calc(100% - 28px);max-width:400px;height:72vh;background:#fff;border:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -12px 44px -16px rgba(0,0,0,.32);display:flex;flex-direction:column;z-index:45}
+  .bubble{padding:10px 13px;border-radius:12px;margin-bottom:8px;font-size:14px;line-height:1.5;max-width:88%;white-space:pre-wrap}
+  .bubble.u{background:var(--blue);color:#fff;margin-left:auto}
+  .bubble.a{background:var(--tint);color:var(--ink)}
+  .banner{padding:12px 16px;border-radius:12px;font-size:14px;margin-bottom:16px;line-height:1.5}
+  .banner.warn{background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412}
+  .banner.paused{background:#FEF1EE;border:1px solid #FCA5A5;color:#991B1B}
+  .fab{position:fixed;right:16px;bottom:16px;z-index:40}
+  @media(max-width:860px){
+    .grid3,.progGrid{grid-template-columns:1fr}
+    .navlinks{display:none}
+    .statgrid{grid-template-columns:repeat(2,1fr);gap:26px 12px}
+    .wrap{padding:0 18px}.hero{padding:40px 0 36px}.section{padding:40px 0}
+    .gencard{padding:18px}.cert{padding:26px 18px}.progGrid{padding:16px 0 60px}.brand b{font-size:19px}
+    aside{position:static!important}
+    .tutor{right:0;width:100%;max-width:100%;height:78vh;border-radius:16px 16px 0 0}
+  }
 </style>
 </head>
 <body>
@@ -58,8 +89,7 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel">
-const { useState, useEffect } = React;
-
+const { useState, useEffect, useRef } = React;
 const api = (url, opts={}) => fetch(url, { credentials:"include", headers:{ "Content-Type":"application/json" }, ...opts })
   .then(async r => { const d = await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||"Something went wrong"); return d; });
 
@@ -72,193 +102,309 @@ function Seal({size=120}){
     <radialGradient id="c" cx="38%" cy="30%" r="80%"><stop offset="0%" stopColor="#2E62D6"/><stop offset="100%" stopColor="#13286A"/></radialGradient></defs>
     <circle cx="66" cy="66" r="56" fill="none" stroke="url(#b)" strokeWidth="2.4"/>{leaves}
     <circle cx="66" cy="66" r="34" fill="url(#c)"/>
-    <path d="M 56 67 L 63 75 L 78 57" transform="translate(0,0)" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M 56 67 L 63 75 L 78 57" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>);
 }
 
 function App(){
   const [me,setMe]=useState(null);
-  const [view,setView]=useState("landing");      // landing | program | verify
+  const [view,setView]=useState("landing");   // landing | program | course | verify
   const [goal,setGoal]=useState(""); const [why,setWhy]=useState("");
   const [program,setProgram]=useState(null); const [busy,setBusy]=useState(false); const [err,setErr]=useState("");
-  const [auth,setAuth]=useState(null);           // null | 'login' | 'signup'
-  const [cert,setCert]=useState(null);           // {credId,...}
+  const [courseId,setCourseId]=useState(null);
+  const [auth,setAuth]=useState(null);
+  const [cert,setCert]=useState(null);
   const [cv,setCv]=useState(null); const [showCv,setShowCv]=useState(false);
   const [verify,setVerify]=useState(null);
 
   useEffect(()=>{ api("/api/auth/me").then(d=>setMe(d.user)).catch(()=>{});
     const p=new URLSearchParams(location.search);
     if(p.get("verify")){ setView("verify"); api("/api/verify/"+p.get("verify")).then(setVerify).catch(()=>setVerify({valid:false})); }
-    else if(p.get("reference")){ api("/api/payments/verify?reference="+p.get("reference")).then(d=>{ if(d.paid) setCert({credId:d.credId}); }).catch(()=>{}); }
+    else if(p.get("ref")){ api("/api/payments/verify?ref="+p.get("ref")).then(d=>{ if(d.paid){ /* find program via state after */ history.replaceState({},"",location.pathname); reopenAfterPay(p.get("ref")); } }).catch(()=>{}); }
   },[]);
+  async function reopenAfterPay(){ /* simplest: send them to their newest program course */ try{ const d=await api("/api/programs"); if(d.programs?.[0]){ openCourse(d.programs[0].id);} }catch{} }
 
-  async function generate(){
-    if(!goal.trim())return; setErr(""); setBusy(true);
-    try{ const d=await api("/api/programs",{method:"POST",body:JSON.stringify({goal,why})}); setProgram(d.program); setView("program"); window.scrollTo(0,0); }
-    catch(e){ setErr(e.message);} setBusy(false);
-  }
-  async function enroll(){
-    if(!me){ setAuth("signup"); return; }
+  function openCourse(id){ setCourseId(id); setView("course"); window.scrollTo(0,0); }
+  async function generate(){ if(!goal.trim())return; setErr(""); setBusy(true);
+    try{ const d=await api("/api/programs",{method:"POST",body:JSON.stringify({goal,why})}); setProgram(d.program); setView("program"); window.scrollTo(0,0);}
+    catch(e){ setErr(e.message);} setBusy(false); }
+  async function enroll(){ if(!me){ setAuth("signup"); return; }
     try{ const d=await api(`/api/programs/${program.id}/enroll`,{method:"POST"});
-      if(d.devPaid) setCert({credId:d.credId});
-      else if(d.authorization_url) location.href=d.authorization_url;
+      if(d.devPaid||d.alreadyEnrolled) openCourse(program.id);
+      else if(d.checkout_url) location.href=d.checkout_url;
     }catch(e){ alert(e.message);} }
   async function genCv(){ setShowCv(true); setCv(null);
     try{ const d=await api(`/api/programs/${program.id}/cv`,{method:"POST"}); setCv(d.cv);}catch(e){ setCv({bullets:[e.message]});} }
 
-  const value=[["A curriculum built for you","Sequenced to your goal — not an off-the-shelf course."],
+  const value=[["A real interactive course","Lessons, videos, activities and quizzes — not just a reading list."],
+    ["An AI tutor on demand","Stuck? Ask Claude anything, any time, about exactly what you're learning."],
     ["A verifiable certificate","Unique ID and a public verify page employers can check."],
-    ["Alumni network access","Peers and mentors credentialed in your field."],
-    ["CV & interview prep","Resume bullets and a LinkedIn blurb from your work."],
+    ["CV & interview prep","Resume bullets and a LinkedIn blurb built from your work."],
     ["A capstone that ships","A real deliverable tied to why you started."],
-    ["Lifetime credential page","Your record stays live as you grow."]];
+    ["Stay-accountable design","A light study commitment keeps you moving so you actually finish."]];
 
-  /* ---------- VERIFY VIEW ---------- */
-  if(view==="verify") return (
-    <div>
-      <Nav me={me} onBrand={()=>{location.href="/";}} onAuth={setAuth} setMe={setMe}/>
-      <div className="wrap" style={{maxWidth:560,padding:"60px 22px",textAlign:"center"}}>
-        {!verify? <p className="muted">Checking credential…</p> :
-         verify.valid? <div className="card" style={{padding:30}}>
-            <div style={{display:"grid",placeItems:"center"}}><Seal size={92}/></div>
-            <div className="eyebrow" style={{marginTop:10}}>Verified credential</div>
-            <h2 style={{margin:"6px 0"}}>{verify.name}</h2>
-            <p className="muted">earned the credential in</p>
-            <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:700,color:"var(--blue)",fontSize:18}}>{verify.programTitle}</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",margin:"16px 0"}}>{(verify.skills||[]).map((s,i)=><span key={i} className="chip">{s}</span>)}</div>
-            <div className="mono muted" style={{fontSize:12}}>Issued {new Date(verify.issuedAt).toLocaleDateString()}</div>
-          </div>
-         : <div className="card" style={{padding:30}}><h2>Not found</h2><p className="muted">No credential matches that ID.</p></div>}
+  if(view==="verify") return (<div><Nav me={me} go={()=>location.href="/"} onAuth={setAuth} setMe={setMe} onNav={setView}/>
+    <div className="wrap narrow" style={{padding:"60px 18px",textAlign:"center"}}>
+      {!verify? <p className="muted">Checking credential…</p> : verify.valid? <div className="card" style={{padding:30}}>
+        <div style={{display:"grid",placeItems:"center"}}><Seal size={92}/></div>
+        <div className="eyebrow" style={{marginTop:10}}>Verified credential</div>
+        <h2 style={{margin:"6px 0"}}>{verify.name}</h2><p className="muted">earned the credential in</p>
+        <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:700,color:"var(--blue)",fontSize:18}}>{verify.programTitle}</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",margin:"16px 0"}}>{(verify.skills||[]).map((s,i)=><span key={i} className="chip">{s}</span>)}</div>
+        <div className="mono muted" style={{fontSize:12}}>Issued {new Date(verify.issuedAt).toLocaleDateString()}</div>
+      </div> : <div className="card" style={{padding:30}}><h2>Not found</h2><p className="muted">No credential matches that ID.</p></div>}
+    </div></div>);
+
+  if(view==="profile" && me) return (<div><Nav me={me} go={()=>setView("landing")} onAuth={setAuth} setMe={setMe} onNav={setView}/><ProfileView me={me} setMe={setMe}/></div>);
+  if(view==="alumni" && me) return (<div><Nav me={me} go={()=>setView("landing")} onAuth={setAuth} setMe={setMe} onNav={setView}/><AlumniView me={me}/></div>);
+
+  if(view==="course" && courseId) return (<div><Nav me={me} go={()=>setView("landing")} onAuth={setAuth} setMe={setMe} onNav={setView}/>
+    <CourseView programId={courseId} me={me} onCert={setCert} onBack={()=>setView("landing")}/>
+    {cert && <CertModal cert={cert} me={me} onClose={()=>setCert(null)}/>}
+  </div>);
+
+  if(view==="program" && program) return (<div><Nav me={me} go={()=>setView("landing")} onAuth={setAuth} setMe={setMe} onNav={setView}/>
+    <div className="wrap progGrid">
+      <div>
+        <div className="mono" style={{fontSize:12,letterSpacing:"1.5px",color:"var(--blue)",marginBottom:10}}>{(program.level||"").toUpperCase()} · {program.totalHours}H · {(program.modules||[]).length} MODULES</div>
+        <h1 style={{fontSize:"clamp(26px,4vw,38px)",margin:"0 0 10px"}}>{program.title}</h1>
+        <p style={{fontSize:17,margin:"0 0 8px"}}>{program.subtitle}</p>
+        <p className="muted" style={{lineHeight:1.6,maxWidth:560}}>{program.summary}</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,margin:"22px 0 30px"}}>{(program.skills||[]).map((s,i)=><span key={i} className="chip">{s}</span>)}</div>
+        <h3>What you'll work through</h3>
+        <div className="card" style={{overflow:"hidden",marginBottom:14}}>{(program.modules||[]).map((m,i)=><PreviewModule key={i} m={m} i={i}/>)}</div>
+        <p className="muted" style={{fontSize:13.5}}>This is the free preview. Enroll to unlock the full lessons, videos, activities, quizzes, the AI tutor, and your capstone.</p>
       </div>
-    </div>);
-
-  /* ---------- PROGRAM VIEW ---------- */
-  if(view==="program" && program) return (
-    <div>
-      <Nav me={me} onBrand={()=>setView("landing")} onAuth={setAuth} setMe={setMe}/>
-      <div className="wrap progGrid">
-        <div>
-          <div className="mono" style={{fontSize:12,letterSpacing:"1.5px",color:"var(--blue)",marginBottom:10}}>{(program.level||"").toUpperCase()} · {program.totalHours}H · {(program.modules||[]).length} MODULES</div>
-          <h1 style={{fontSize:"clamp(26px,4vw,38px)",margin:"0 0 10px"}}>{program.title}</h1>
-          <p style={{fontSize:17,margin:"0 0 8px"}}>{program.subtitle}</p>
-          <p className="muted" style={{lineHeight:1.6,maxWidth:560}}>{program.summary}</p>
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,margin:"22px 0 30px"}}>{(program.skills||[]).map((s,i)=><span key={i} className="chip">{s}</span>)}</div>
-
-          <h3>Curriculum</h3>
-          <div className="card" style={{overflow:"hidden",marginBottom:30}}>
-            {(program.modules||[]).map((m,i)=><Module key={i} m={m} i={i} last={i===program.modules.length-1}/>)}
-          </div>
-
-          <h3>Capstone</h3>
-          <div className="navy" style={{borderRadius:14,padding:"20px 22px",marginBottom:30}}>
-            <b style={{fontFamily:"'Plus Jakarta Sans'",fontSize:18}}>{program.capstone?.title}</b>
-            <p style={{margin:"8px 0 0",color:"#A8BFE6",lineHeight:1.6}}>{program.capstone?.description}</p>
-          </div>
-
-          <h3>Turn it into a career move</h3>
-          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-            <button className="btn btn-ghost" onClick={genCv}>Generate CV bullets</button>
-            <button className="btn btn-ghost" onClick={enroll}>{me?"Get my certificate":"Sign up to enroll"}</button>
-          </div>
-        </div>
-
-        <aside style={{position:"sticky",top:74}}>
-          <div className="card" style={{overflow:"hidden"}}>
-            <div className="navy" style={{padding:"20px 22px"}}>
-              <span style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:34}}>$35</span>
-              <span style={{fontSize:13,color:"#A8BFE6",marginLeft:8}}>one time · lifetime access</span>
-            </div>
-            <div style={{padding:"6px 20px 18px"}}>
-              {value.map((v,i)=><div key={i} style={{padding:"10px 0",borderBottom:i<value.length-1?"1px solid var(--line)":"none"}}>
-                <div style={{fontWeight:600,fontSize:13.5,color:"var(--navy)"}}>{v[0]}</div></div>)}
-              <button className="btn btn-primary" style={{width:"100%",marginTop:14}} onClick={enroll}>Enroll for $35</button>
-              <div className="muted" style={{textAlign:"center",fontSize:12,marginTop:10}}>7-day refund · cancel anytime</div>
+      <aside style={{position:"sticky",top:74}}>
+        <div className="card" style={{overflow:"hidden"}}>
+          <div className="navy" style={{padding:"20px 22px"}}><span style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:34}}>$35</span><span style={{fontSize:13,color:"#A8BFE6",marginLeft:8}}>one time · lifetime access</span></div>
+          <div style={{padding:"6px 20px 18px"}}>
+            {value.map((v,i)=><div key={i} style={{padding:"10px 0",borderBottom:i<value.length-1?"1px solid var(--line)":"none"}}><div style={{fontWeight:600,fontSize:13.5,color:"var(--navy)"}}>{v[0]}</div></div>)}
+            <button className="btn btn-primary" style={{width:"100%",marginTop:14}} onClick={enroll}>{me?"Enroll & start learning":"Sign up to enroll"}</button>
+            <div style={{display:"flex",gap:10,marginTop:10}}>
+              <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={genCv}>CV preview</button>
             </div>
           </div>
-          <button className="btn" style={{background:"none",color:"var(--slate)",marginTop:12,fontSize:13}} onClick={()=>setView("landing")}>← Start a different program</button>
-        </aside>
-      </div>
-      {showCv && <CvModal cv={cv} onClose={()=>setShowCv(false)}/>}
-      {cert && <CertModal cert={cert} program={program} me={me} onClose={()=>setCert(null)}/>}
-      {auth && <AuthModal mode={auth} onClose={()=>setAuth(null)} onAuth={u=>{setMe(u);setAuth(null);}}/>}
-    </div>);
-
-  /* ---------- LANDING ---------- */
-  return (
-    <div>
-      <Nav me={me} onBrand={()=>setView("landing")} onAuth={setAuth} setMe={setMe}/>
-      <section className="hero"><div className="wrap" style={{maxWidth:760}}>
-        <span className="pill">✦ Powered by Claude</span>
-        <h1 style={{fontSize:"clamp(34px,6vw,54px)",lineHeight:1.05,margin:"18px 0 16px"}}>Get credentialed in <span style={{color:"var(--blue)"}}>anything.</span></h1>
-        <p className="muted" style={{fontSize:18,maxWidth:520,margin:"0 auto"}}>Tell Learnable what you want to master and why. Get a personalized curriculum, a real capstone, a verifiable certificate, and the career support that makes it count — for $35.</p>
-        <div className="card gencard" style={{textAlign:"left"}}>
-          <label>What do you want to master?</label>
-          <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. financial modeling for property development"/>
-          <label style={{marginTop:16,display:"block"}}>Why does it matter to you?</label>
-          <textarea rows="2" value={why} onChange={e=>setWhy(e.target.value)} placeholder="e.g. I'm raising capital for a 353-unit estate and want to build the model myself"/>
-          {err && <div className="err">{err}</div>}
-          <button className="btn btn-primary" style={{width:"100%",marginTop:18,opacity:goal.trim()?1:.5}} disabled={!goal.trim()||busy} onClick={generate}>{busy?"Designing your program…":"Design my program — free preview"} </button>
-          <div className="muted" style={{textAlign:"center",fontSize:12.5,marginTop:12}}>See your full program before you pay a cent</div>
         </div>
-        <div className="muted" style={{marginTop:26,fontSize:13.5}}>Designed by Claude · Build a real capstone · Employer-verifiable</div>
-      </div></section>
+        <button className="btn" style={{background:"none",color:"var(--slate)",marginTop:12,fontSize:13}} onClick={()=>setView("landing")}>← Start a different program</button>
+      </aside>
+    </div>
+    {showCv && <CvModal cv={cv} onClose={()=>setShowCv(false)}/>}
+    {auth && <AuthModal mode={auth} onClose={()=>setAuth(null)} onAuth={u=>{setMe(u);setAuth(null);}}/>}
+  </div>);
 
-      <section className="section"><div className="wrap">
-        <div className="eyebrow">What's included</div>
-        <h2 className="h2">One $35 payment. Everything you need to make it count.</h2>
-        <div className="grid3" style={{marginTop:32}}>
-          {value.map((v,i)=><div key={i} className="val"><div className="ic">✦</div><div style={{fontWeight:700,color:"var(--navy)",marginBottom:6}}>{v[0]}</div><div className="muted" style={{fontSize:13.5,lineHeight:1.5}}>{v[1]}</div></div>)}
-        </div>
-      </div></section>
-
-      <section className="navy section"><div className="wrap" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:18,textAlign:"center"}}>
-        {[["$35","one-time · lifetime access"],["Minutes","from idea to full curriculum"],["Capstone","a real deliverable, not a quiz"],["Verifiable","unique ID + public check"]].map((s,i)=>
-          <div key={i}><div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:30,color:"#fff"}}>{s[0]}</div><div style={{color:"#9FB6DF",fontSize:13,marginTop:4}}>{s[1]}</div></div>)}
-      </div></section>
-
-      <footer><div className="wrap" style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:12,alignItems:"center"}}>
-        <div className="brand"><Seal size={26}/><b style={{color:"#fff"}}>Learnable</b></div>
-        <div style={{color:"#8AA3CF",fontSize:12.5}}>© 2026 Learnable · hello@learnable.app</div>
-      </div></footer>
-
-      {auth && <AuthModal mode={auth} onClose={()=>setAuth(null)} onAuth={u=>{setMe(u);setAuth(null);}}/>}
-    </div>);
-}
-
-function Nav({me,onBrand,onAuth,setMe}){
-  return (<nav><div className="wrap navrow">
-    <div className="brand" onClick={onBrand}><Seal size={30}/><b>Learnable</b></div>
-    {me? <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <span className="muted" style={{fontSize:14}}>{me.name}</span>
-        <button className="btn btn-ghost btn-sm" onClick={()=>api("/api/auth/logout",{method:"POST"}).then(()=>setMe(null))}>Log out</button>
+  // LANDING
+  return (<div><Nav me={me} go={()=>setView("landing")} onAuth={setAuth} setMe={setMe} onNav={setView}/>
+    <section className="hero"><div className="wrap narrow">
+      <span className="pill">✦ Powered by Claude</span>
+      <h1 style={{fontSize:"clamp(34px,6vw,54px)",lineHeight:1.05,margin:"18px 0 16px"}}>Get credentialed in <span style={{color:"var(--blue)"}}>anything.</span></h1>
+      <p className="muted" style={{fontSize:18,maxWidth:520,margin:"0 auto"}}>Tell Learnable what you want to master and why. Get a full interactive course — lessons, videos, quizzes, an AI tutor, a capstone, and a verifiable certificate — for $35.</p>
+      <div className="card gencard" style={{textAlign:"left"}}>
+        <label>What do you want to master?</label>
+        <input value={goal} onChange={e=>setGoal(e.target.value)} placeholder="e.g. financial modeling for property development"/>
+        <label style={{marginTop:16,display:"block"}}>Why does it matter to you?</label>
+        <textarea rows="2" value={why} onChange={e=>setWhy(e.target.value)} placeholder="e.g. I'm raising capital for a 353-unit estate and want to build the model myself"/>
+        {err && <div className="err">{err}</div>}
+        <button className="btn btn-primary" style={{width:"100%",marginTop:18}} disabled={!goal.trim()||busy} onClick={generate}>{busy?"Designing your course…":"Design my course — free preview"}</button>
+        <div className="muted" style={{textAlign:"center",fontSize:12.5,marginTop:12}}>See your full course outline before you pay a cent</div>
       </div>
-     : <div style={{display:"flex",gap:10}}>
-        <button className="btn btn-ghost btn-sm" onClick={()=>onAuth("login")}>Log in</button>
-        <button className="btn btn-primary btn-sm" onClick={()=>onAuth("signup")}>Start free</button>
-      </div>}
-  </div></nav>);
-}
-
-function Module({m,i,last}){
-  const [open,setOpen]=useState(i===0);
-  return (<div style={{borderTop:i?"1px solid var(--line)":"none"}}>
-    <button className="mod" onClick={()=>setOpen(!open)}>
-      <span className="mono" style={{color:"var(--blue)",width:22}}>{String(i+1).padStart(2,"0")}</span>
-      <span style={{flex:1,fontWeight:600,color:"var(--navy)"}}>{m.title}</span>
-      <span className="muted" style={{fontSize:12.5}}>{m.hours}h</span>
-      <span className="muted">{open?"▴":"▾"}</span>
-    </button>
-    {open && <div style={{padding:"0 16px 14px 54px"}}>{(m.lessons||[]).map((l,j)=>
-      <div key={j} className="muted" style={{fontSize:14,padding:"4px 0",display:"flex",gap:9,alignItems:"center"}}><span style={{width:5,height:5,borderRadius:9,background:"var(--blue)"}}></span>{l}</div>)}</div>}
+      <div className="muted" style={{marginTop:26,fontSize:13.5}}>Designed by Claude · Learn by doing · Employer-verifiable</div>
+    </div></section>
+    <section className="section"><div className="wrap">
+      <div className="eyebrow">What's included</div>
+      <h2 className="h2">One $35 payment. A real program that upskills you.</h2>
+      <div className="grid3" style={{marginTop:32}}>{value.map((v,i)=><div key={i} className="val"><div className="ic">✦</div><div style={{fontWeight:700,color:"var(--navy)",marginBottom:6}}>{v[0]}</div><div className="muted" style={{fontSize:13.5,lineHeight:1.5}}>{v[1]}</div></div>)}</div>
+    </div></section>
+    <section className="navy section"><div className="wrap statgrid">
+      {[["$35","one-time · lifetime access"],["AI tutor","help whenever you're stuck"],["Capstone","a real deliverable, not a quiz"],["Verifiable","unique ID + public check"]].map((s,i)=>
+        <div key={i}><div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:28,color:"#fff"}}>{s[0]}</div><div style={{color:"#9FB6DF",fontSize:13,marginTop:4}}>{s[1]}</div></div>)}
+    </div></section>
+    <footer><div className="wrap" style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:12,alignItems:"center"}}>
+      <div className="brand"><Seal size={26}/><b style={{color:"#fff"}}>Learnable</b></div>
+      <div style={{color:"#8AA3CF",fontSize:12.5}}>© 2026 Learnable · hello@learnable.app</div>
+    </div></footer>
+    {auth && <AuthModal mode={auth} onClose={()=>setAuth(null)} onAuth={u=>{setMe(u);setAuth(null);}}/>}
   </div>);
 }
 
+/* ===================== COURSE PLAYER ===================== */
+function CourseView({programId, me, onCert, onBack}){
+  const [state,setState]=useState(null); const [err,setErr]=useState("");
+  const [sub,setSub]=useState("home");           // home | lesson
+  const [cur,setCur]=useState(null);             // {mi,li,title}
+  const [lesson,setLesson]=useState(null); const [lloading,setLloading]=useState(false);
+  const [tutorOpen,setTutorOpen]=useState(false);
+  const [capNote,setCapNote]=useState("");
+
+  async function load(){ try{ const d=await api(`/api/courses/${programId}/state`); setState(d); if(d.allDone&&d.credId) {/* certificate available */} }catch(e){ setErr(e.message);} }
+  useEffect(()=>{ load(); },[programId]);
+
+  // study heartbeat: +1 min/minute while visible
+  useEffect(()=>{ const t=setInterval(()=>{ if(document.visibilityState==="visible"){
+      api(`/api/courses/${programId}/heartbeat`,{method:"POST"}).then(d=>{ setState(s=>s?{...s,study:{...s.study,minutes:d.minutes,status:d.status}}:s); }).catch(()=>{});
+    }},60000); return ()=>clearInterval(t); },[programId]);
+
+  if(err) return <div className="wrap" style={{padding:40}}><p className="err">{err}</p></div>;
+  if(!state) return <div className="wrap muted" style={{padding:60,textAlign:"center"}}>Loading your course…</div>;
+  if(!state.enrolled) return <div className="wrap" style={{padding:40,textAlign:"center"}}><h2>Not enrolled yet</h2><button className="btn btn-ghost" onClick={onBack}>← Back</button></div>;
+
+  const p=state.program, study=state.study, done=new Set(state.completed||[]);
+  const paused=study.status==="paused";
+  const pct=state.total? Math.round((state.lessonsDone/state.total)*100):0;
+
+  async function openLesson(mi,li,title){ setCur({mi,li,title}); setSub("lesson"); setLesson(null); setLloading(true); window.scrollTo(0,0);
+    try{ const d=await api(`/api/courses/${programId}/lesson`,{method:"POST",body:JSON.stringify({moduleIdx:mi,lessonIdx:li})}); setLesson(d.lesson);}catch(e){ setLesson({error:e.message});} setLloading(false); }
+  async function completeLesson(score){ await api(`/api/courses/${programId}/progress`,{method:"POST",body:JSON.stringify({lessonKey:`${cur.mi}-${cur.li}`,quizScore:score})}); await load(); setSub("home"); window.scrollTo(0,0); }
+  async function submitCapstone(){ await api(`/api/courses/${programId}/capstone`,{method:"POST",body:JSON.stringify({})}); await load(); }
+
+  return (<div>
+    {/* study bar */}
+    <div className="studybar"><div className="wrap" style={{display:"flex",alignItems:"center",gap:14}}>
+      <div style={{flex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12.5,marginBottom:5}}>
+          <span className="muted">Study commitment · {study.minutes}/{study.required} min this 2 weeks</span>
+          <span className="muted">{paused?"":`${study.daysLeft} days left`}</span>
+        </div>
+        <div className="pbar"><span style={{width:Math.min(100,(study.minutes/study.required)*100)+"%"}}></span></div>
+      </div>
+    </div></div>
+
+    <div className="wrap narrow" style={{padding:"22px 18px 90px"}}>
+      {paused && <div className="banner paused"><b>Your access is paused.</b> You didn't hit the 30-minute minimum in the last two weeks. Open any lesson and study for {study.required-study.minutes} more minutes to switch it back on — your progress is safe.</div>}
+      {!paused && study.daysLeft<=3 && study.minutes<study.required && <div className="banner warn">Heads up: {study.required-study.minutes} more minutes of study in the next {study.daysLeft} days keeps your access active.</div>}
+
+      {sub==="home" && <div>
+        <h1 style={{fontSize:"clamp(24px,4vw,34px)",margin:"4px 0 6px"}}>{p.title}</h1>
+        <p className="muted" style={{marginTop:0}}>{p.subtitle}</p>
+        <div style={{display:"flex",alignItems:"center",gap:12,margin:"14px 0 26px"}}>
+          <div className="pbar" style={{flex:1}}><span style={{width:pct+"%"}}></span></div>
+          <span className="mono" style={{fontSize:13,color:"var(--blue)"}}>{pct}%</span>
+        </div>
+
+        {(p.modules||[]).map((m,mi)=>(<div key={mi} style={{marginBottom:22}}>
+          <div style={{fontWeight:700,color:"var(--navy)",fontFamily:"'Plus Jakarta Sans'",marginBottom:10}}>{mi+1}. {m.title}</div>
+          {(m.lessons||[]).map((t,li)=>{ const k=`${mi}-${li}`; const d=done.has(k);
+            return (<div key={li} className="lessonrow" onClick={()=>openLesson(mi,li,t)}>
+              <span className={"check"+(d?" done":"")}>{d?"✓":""}</span>
+              <span style={{flex:1,fontWeight:d?500:600,color:d?"var(--slate)":"var(--ink)"}}>{t}</span>
+              <span className="muted" style={{fontSize:13}}>{d?"Done":"Start"} ›</span>
+            </div>); })}
+        </div>))}
+
+        {/* capstone */}
+        <div className="card" style={{padding:20,marginTop:10,marginBottom:20}}>
+          <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:6}}>
+            <span className={"check"+(done.has("capstone")?" done":"")}>{done.has("capstone")?"✓":""}</span>
+            <b style={{fontFamily:"'Plus Jakarta Sans'",fontSize:17}}>Capstone · {p.capstone?.title}</b>
+          </div>
+          <p className="muted" style={{fontSize:14,lineHeight:1.6,margin:"0 0 12px"}}>{p.capstone?.description}</p>
+          {!done.has("capstone")? <div>
+            <textarea rows="3" value={capNote} onChange={e=>setCapNote(e.target.value)} placeholder="Paste a link to your work, or describe what you built…"/>
+            <button className="btn btn-primary btn-sm" style={{marginTop:10}} onClick={submitCapstone}>Submit capstone</button>
+          </div> : <div className="banner" style={{background:"#ECFDF3",border:"1px solid #A7F3D0",color:"#065F46",marginBottom:0}}>Capstone submitted ✓</div>}
+        </div>
+
+        {state.allDone && <div className="card" style={{padding:24,textAlign:"center",border:"2px solid var(--blue)"}}>
+          <div style={{display:"grid",placeItems:"center",marginBottom:8}}><Seal size={70}/></div>
+          <h3 style={{margin:"0 0 6px"}}>You finished! 🎉</h3>
+          <p className="muted" style={{fontSize:14,margin:"0 0 14px"}}>Every lesson and your capstone are done. Your verifiable certificate is ready.</p>
+          <button className="btn btn-primary" onClick={()=>onCert({credId:state.credId,programTitle:p.title})}>Get my certificate</button>
+        </div>}
+      </div>}
+
+      {sub==="lesson" && <LessonView cur={cur} lesson={lesson} loading={lloading} done={done.has(`${cur.mi}-${cur.li}`)} onBack={()=>setSub("home")} onComplete={completeLesson}/>}
+    </div>
+
+    {/* AI tutor */}
+    {!tutorOpen && <button className="btn btn-primary fab" onClick={()=>setTutorOpen(true)}>✦ AI tutor</button>}
+    {tutorOpen && <Tutor programId={programId} lessonTitle={cur?.title} onClose={()=>setTutorOpen(false)}/>}
+  </div>);
+}
+
+function LessonView({cur,lesson,loading,done,onBack,onComplete}){
+  const [answers,setAnswers]=useState({}); const [checked,setChecked]=useState(false);
+  useEffect(()=>{ setAnswers({}); setChecked(false); },[cur]);
+  if(loading) return <div style={{padding:"40px 0",textAlign:"center"}} className="muted">Building this lesson…</div>;
+  if(!lesson||lesson.error) return <div><button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button><p className="err">{lesson?.error||"Couldn't load."}</p></div>;
+  const quiz=lesson.quiz||[];
+  const score=quiz.reduce((n,q,i)=>n+((answers[i]===q.answer)?1:0),0);
+  return (<div>
+    <button className="btn btn-ghost btn-sm" onClick={onBack}>← All lessons</button>
+    <h1 style={{fontSize:"clamp(22px,4vw,30px)",margin:"14px 0 14px"}}>{cur.title}</h1>
+    <p style={{fontSize:15.5,lineHeight:1.7}}>{lesson.reading}</p>
+
+    <a href={lesson.videoUrl} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{marginTop:8}}>▶ Watch a video on this</a>
+
+    <div className="card" style={{padding:18,margin:"22px 0"}}>
+      <div className="eyebrow" style={{textAlign:"left",marginBottom:8}}>Activity</div>
+      <p style={{margin:0,fontSize:14.5,lineHeight:1.6}}>{lesson.activity}</p>
+    </div>
+
+    <h3>Quick check</h3>
+    {quiz.map((q,i)=>(<div key={i} style={{marginBottom:16}}>
+      <div style={{fontWeight:600,marginBottom:4}}>{i+1}. {q.q}</div>
+      {(q.options||[]).map((o,oi)=>{ let cls="qopt"; if(checked){ if(oi===q.answer)cls+=" correct"; else if(answers[i]===oi)cls+=" wrong"; } else if(answers[i]===oi)cls+=" sel";
+        return <button key={oi} className={cls} onClick={()=>!checked&&setAnswers({...answers,[i]:oi})}>{o}</button>; })}
+    </div>))}
+
+    {!checked? <button className="btn btn-primary" disabled={Object.keys(answers).length<quiz.length} onClick={()=>setChecked(true)}>Check answers</button>
+      : <div>
+          <div className="banner" style={{background:"var(--tint)",border:"1px solid var(--line)",color:"var(--ink)"}}>You scored {score}/{quiz.length}. {score===quiz.length?"Perfect!":"Review the ones you missed, then mark this lesson done."}</div>
+          <button className="btn btn-primary" onClick={()=>onComplete(score)}>{done?"Done ✓ — back to course":"Mark lesson complete"}</button>
+        </div>}
+  </div>);
+}
+
+function Tutor({programId,lessonTitle,onClose}){
+  const [msgs,setMsgs]=useState([{role:"assistant",content:`Hi! I'm your AI tutor${lessonTitle?` for "${lessonTitle}"`:""}. Ask me anything — I'll explain it simply or quiz you.`}]);
+  const [text,setText]=useState(""); const [busy,setBusy]=useState(false); const endRef=useRef(null);
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs,busy]);
+  async function send(){ const t=text.trim(); if(!t||busy)return; const next=[...msgs,{role:"user",content:t}]; setMsgs(next); setText(""); setBusy(true);
+    try{ const d=await api(`/api/courses/${programId}/tutor`,{method:"POST",body:JSON.stringify({messages:next,lessonTitle})}); setMsgs([...next,{role:"assistant",content:d.reply}]); }
+    catch(e){ setMsgs([...next,{role:"assistant",content:e.message}]); } setBusy(false); }
+  return (<div className="tutor">
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:"1px solid var(--line)"}}>
+      <b style={{fontFamily:"'Plus Jakarta Sans'"}}>✦ AI tutor</b><button className="x" style={{position:"static"}} onClick={onClose}>×</button>
+    </div>
+    <div style={{flex:1,overflowY:"auto",padding:"14px 16px"}}>
+      {msgs.map((m,i)=><div key={i} className={"bubble "+(m.role==="user"?"u":"a")}>{m.content}</div>)}
+      {busy && <div className="bubble a">…</div>}
+      <div ref={endRef}/>
+    </div>
+    <div style={{display:"flex",gap:8,padding:"10px 12px",borderTop:"1px solid var(--line)"}}>
+      <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask your tutor…" style={{marginTop:0}}/>
+      <button className="btn btn-primary btn-sm" onClick={send} disabled={busy}>Send</button>
+    </div>
+  </div>);
+}
+
+/* ===================== shared ===================== */
+function Avatar({user,size=40}){
+  if(user&&user.avatar) return <img src={user.avatar} alt="" style={{width:size,height:size,borderRadius:"50%",objectFit:"cover"}}/>;
+  const ch=(user&&user.name?user.name[0]:"?").toUpperCase();
+  return <div style={{width:size,height:size,borderRadius:"50%",background:"linear-gradient(180deg,#3B82F6,#2563EB)",color:"#fff",display:"grid",placeItems:"center",fontWeight:700,fontSize:size*0.42}}>{ch}</div>;
+}
+function Nav({me,go,onAuth,setMe,onNav}){
+  return (<nav><div className="wrap navrow">
+    <div className="brand" onClick={go}><Seal size={30}/><b>Learnable</b></div>
+    {me? <div style={{display:"flex",alignItems:"center",gap:14}}>
+        <button className="btn" style={{background:"none",color:"var(--slate)",fontSize:14,fontWeight:600,padding:6}} onClick={()=>onNav&&onNav("alumni")}>Alumni</button>
+        <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={()=>onNav&&onNav("profile")}><Avatar user={me} size={30}/><b className="navlinks" style={{fontSize:14,color:"var(--navy)",fontWeight:600}}>{me.name}</b></div>
+        <button className="btn btn-ghost btn-sm" onClick={()=>api("/api/auth/logout",{method:"POST"}).then(()=>setMe(null))}>Log out</button></div>
+     : <div style={{display:"flex",gap:10}}><button className="btn btn-ghost btn-sm" onClick={()=>onAuth("login")}>Log in</button><button className="btn btn-primary btn-sm" onClick={()=>onAuth("signup")}>Start free</button></div>}
+  </div></nav>);
+}
+function PreviewModule({m,i}){ const [o,setO]=useState(i===0);
+  return (<div style={{borderTop:i?"1px solid var(--line)":"none"}}>
+    <button className="mod" onClick={()=>setO(!o)}><span className="mono" style={{color:"var(--blue)",width:22}}>{String(i+1).padStart(2,"0")}</span>
+      <span style={{flex:1,fontWeight:600,color:"var(--navy)"}}>{m.title}</span><span className="muted" style={{fontSize:12.5}}>{m.hours}h</span><span className="muted">{o?"▴":"▾"}</span></button>
+    {o && <div style={{padding:"0 16px 14px 54px"}}>{(m.lessons||[]).map((l,j)=><div key={j} className="muted" style={{fontSize:14,padding:"4px 0",display:"flex",gap:9,alignItems:"center"}}><span style={{width:5,height:5,borderRadius:9,background:"var(--blue)"}}></span>{l}</div>)}</div>}
+  </div>);
+}
 function AuthModal({mode,onClose,onAuth}){
   const [m,setM]=useState(mode); const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [pw,setPw]=useState(""); const [err,setErr]=useState(""); const [busy,setBusy]=useState(false);
   async function submit(){ setErr(""); setBusy(true);
-    try{ const body=m==="signup"?{name,email,password:pw}:{email,password:pw};
-      const d=await api("/api/auth/"+m,{method:"POST",body:JSON.stringify(body)}); onAuth(d.user);
-    }catch(e){ setErr(e.message);} setBusy(false); }
+    try{ const body=m==="signup"?{name,email,password:pw}:{email,password:pw}; const d=await api("/api/auth/"+m,{method:"POST",body:JSON.stringify(body)}); onAuth(d.user);}catch(e){ setErr(e.message);} setBusy(false); }
   return (<div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}>
     <button className="x" onClick={onClose}>×</button>
     <h2 style={{marginTop:0}}>{m==="signup"?"Create your account":"Welcome back"}</h2>
@@ -267,28 +413,22 @@ function AuthModal({mode,onClose,onAuth}){
     <label style={{marginTop:14,display:"block"}}>Password</label><input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="At least 8 characters"/>
     {err && <div className="err">{err}</div>}
     <button className="btn btn-primary" style={{width:"100%",marginTop:18}} disabled={busy} onClick={submit}>{busy?"…":(m==="signup"?"Create account":"Log in")}</button>
-    <div className="muted" style={{textAlign:"center",fontSize:13,marginTop:14}}>
-      {m==="signup"?"Already have an account? ":"New here? "}
-      <a style={{color:"var(--blue)",cursor:"pointer"}} onClick={()=>{setM(m==="signup"?"login":"signup");setErr("");}}>{m==="signup"?"Log in":"Create one"}</a>
-    </div>
+    <div className="muted" style={{textAlign:"center",fontSize:13,marginTop:14}}>{m==="signup"?"Already have an account? ":"New here? "}
+      <a style={{color:"var(--blue)",cursor:"pointer"}} onClick={()=>{setM(m==="signup"?"login":"signup");setErr("");}}>{m==="signup"?"Log in":"Create one"}</a></div>
   </div></div>);
 }
-
 function CvModal({cv,onClose}){
   return (<div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()}>
-    <button className="x" onClick={onClose}>×</button>
-    <h2 style={{marginTop:0}}>CV &amp; profile prep</h2>
-    {!cv? <p className="muted">Drafting from your program…</p> : <div>
+    <button className="x" onClick={onClose}>×</button><h2 style={{marginTop:0}}>CV &amp; profile prep</h2>
+    {!cv? <p className="muted">Drafting…</p> : <div>
       {cv.headline && <div style={{background:"var(--tint2)",border:"1px solid var(--line)",borderRadius:10,padding:"12px 14px",fontWeight:600,color:"var(--blueDeep)",marginBottom:14}}>{cv.headline}</div>}
       <div className="mono" style={{fontSize:12,color:"var(--blue)",marginBottom:8}}>RESUME BULLETS</div>
       {(cv.bullets||[]).map((b,i)=><div key={i} style={{display:"flex",gap:9,padding:"6px 0",fontSize:14,lineHeight:1.5}}><b style={{color:"var(--blue)"}}>▸</b>{b}</div>)}
-      {cv.linkedin && <><div className="mono" style={{fontSize:12,color:"var(--blue)",margin:"14px 0 8px"}}>LINKEDIN ABOUT</div>
-        <p style={{borderLeft:"3px solid var(--blue)",paddingLeft:12,margin:0,fontSize:14,lineHeight:1.6}}>{cv.linkedin}</p></>}
+      {cv.linkedin && <><div className="mono" style={{fontSize:12,color:"var(--blue)",margin:"14px 0 8px"}}>LINKEDIN ABOUT</div><p style={{borderLeft:"3px solid var(--blue)",paddingLeft:12,margin:0,fontSize:14,lineHeight:1.6}}>{cv.linkedin}</p></>}
     </div>}
   </div></div>);
 }
-
-function CertModal({cert,program,me,onClose}){
+function CertModal({cert,me,onClose}){
   const link=location.origin+"/?verify="+cert.credId;
   return (<div className="overlay" onClick={onClose}><div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:460}}>
     <button className="x" onClick={onClose}>×</button>
@@ -298,14 +438,66 @@ function CertModal({cert,program,me,onClose}){
       <div className="muted" style={{fontSize:13}}>This certifies that</div>
       <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:800,fontSize:26,color:"var(--navy)",margin:"6px 0"}}>{me?.name||"You"}</div>
       <div className="muted" style={{fontSize:13}}>has earned the credential in</div>
-      <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:700,fontSize:18,color:"var(--blue)",margin:"4px 0 18px"}}>{program?.title}</div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11.5,color:"var(--slate)",borderTop:"1px solid var(--line)",paddingTop:12}}>
-        <span>{new Date().toLocaleDateString()}</span><span className="mono">{cert.credId}</span></div>
+      <div style={{fontFamily:"'Plus Jakarta Sans'",fontWeight:700,fontSize:18,color:"var(--blue)",margin:"4px 0 18px"}}>{cert.programTitle}</div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11.5,color:"var(--slate)",borderTop:"1px solid var(--line)",paddingTop:12}}><span>{new Date().toLocaleDateString()}</span><span className="mono">{cert.credId}</span></div>
     </div>
     <div className="muted" style={{textAlign:"center",fontSize:11.5,marginTop:12}}>Verify at <a href={link} style={{color:"var(--blue)"}}>{location.host}/?verify={cert.credId}</a></div>
   </div></div>);
 }
-
+function ProfileView({me,setMe}){
+  const [f,setF]=useState({name:me.name,headline:me.headline||"",education:me.education||"",linkedin:me.linkedin||"",avatar:me.avatar||null,alumniVisible:me.alumniVisible!==false});
+  const [certs,setCerts]=useState([]); const [msg,setMsg]=useState(""); const [err,setErr]=useState(""); const [busy,setBusy]=useState(false);
+  useEffect(()=>{ api("/api/certificates").then(d=>setCerts(d.certificates||[])).catch(()=>{}); },[]);
+  function pickAvatar(e){ const file=e.target.files[0]; if(!file)return; const rd=new FileReader();
+    rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=c.height=240; const x=c.getContext("2d");
+      const s=Math.min(img.width,img.height); x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,240,240);
+      setF(v=>({...v,avatar:c.toDataURL("image/jpeg",0.82)})); }; img.src=rd.result; }; rd.readAsDataURL(file); }
+  async function save(){ setErr(""); setBusy(true);
+    try{ const d=await api("/api/profile",{method:"PUT",body:JSON.stringify(f)}); setMe(d.user); setMsg("Saved ✓"); setTimeout(()=>setMsg(""),2000);}catch(e){ setErr(e.message);} setBusy(false); }
+  return (<div className="wrap narrow" style={{padding:"30px 18px 80px"}}>
+    <h1 style={{fontSize:"clamp(24px,4vw,32px)"}}>Your profile</h1>
+    <p className="muted" style={{marginTop:0}}>Your member profile — and how you appear in the alumni network.</p>
+    <div className="card" style={{padding:22,marginTop:8}}>
+      <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:18}}>
+        <Avatar user={f} size={72}/>
+        <label className="btn btn-ghost btn-sm" style={{cursor:"pointer"}}>Upload photo<input type="file" accept="image/*" onChange={pickAvatar} style={{display:"none"}}/></label>
+      </div>
+      <label>Name</label><input value={f.name} onChange={e=>setF({...f,name:e.target.value})}/>
+      <label style={{marginTop:14,display:"block"}}>Headline</label><input value={f.headline} onChange={e=>setF({...f,headline:e.target.value})} placeholder="e.g. Aspiring property developer"/>
+      <label style={{marginTop:14,display:"block"}}>Education / background</label><textarea rows="2" value={f.education} onChange={e=>setF({...f,education:e.target.value})} placeholder="e.g. BCom Finance, University of Cape Town"/>
+      <label style={{marginTop:14,display:"block"}}>LinkedIn URL</label><input value={f.linkedin} onChange={e=>setF({...f,linkedin:e.target.value})} placeholder="https://linkedin.com/in/you"/>
+      <label style={{marginTop:16,display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}><input type="checkbox" checked={f.alumniVisible} onChange={e=>setF({...f,alumniVisible:e.target.checked})} style={{width:"auto",marginTop:0}}/> Show me in the alumni network</label>
+      {err && <div className="err">{err}</div>}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginTop:16}}><button className="btn btn-primary" disabled={busy} onClick={save}>{busy?"…":"Save profile"}</button>{msg && <span style={{color:"#15803D",fontSize:14}}>{msg}</span>}</div>
+    </div>
+    <h3 style={{marginTop:30}}>My credentials</h3>
+    {certs.length===0? <p className="muted">No credentials yet — finish a program to earn one.</p> :
+      certs.map((c,i)=><div key={i} className="card" style={{padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:12}}>
+        <Seal size={40}/><div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,color:"var(--navy)"}}>{c.programTitle}</div>
+        <a href={"/?verify="+c.credId} className="mono" style={{fontSize:12,color:"var(--blue)"}}>{c.credId}</a></div></div>)}
+  </div>);
+}
+function AlumniView({me}){
+  const [list,setList]=useState(null); const [q,setQ]=useState(""); const [total,setTotal]=useState(0);
+  async function load(skill){ setList(null); try{ const d=await api("/api/alumni"+(skill?("?skill="+encodeURIComponent(skill)):"")); setList(d.alumni); setTotal(d.total);}catch(e){ setList([]);} }
+  useEffect(()=>{ load(""); },[]);
+  return (<div className="wrap" style={{padding:"30px 18px 80px"}}>
+    <h1 style={{fontSize:"clamp(24px,4vw,32px)"}}>Alumni network</h1>
+    <p className="muted" style={{marginTop:0}}>{total} credentialed member{total===1?"":"s"}. Connect with people mastering the same skills.</p>
+    <div style={{display:"flex",gap:8,margin:"14px 0 22px",maxWidth:420}}>
+      <input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&load(q)} placeholder="Search a skill, e.g. modeling" style={{marginTop:0}}/>
+      <button className="btn btn-primary btn-sm" onClick={()=>load(q)}>Search</button>
+    </div>
+    {!list? <p className="muted">Loading…</p> : list.length===0? <p className="muted">No alumni yet{q?" for that search":""}. Be the first to finish a program!</p> :
+      <div className="grid3">{list.map((a,i)=><div key={i} className="val">
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10}}><Avatar user={a} size={48}/>
+          <div style={{minWidth:0}}><div style={{fontWeight:700,color:"var(--navy)"}}>{a.name}</div>{a.headline&&<div className="muted" style={{fontSize:12.5}}>{a.headline}</div>}</div></div>
+        {a.education&&<div className="muted" style={{fontSize:13,marginBottom:8}}>{a.education}</div>}
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>{a.credentials.slice(0,2).map((c,j)=><span key={j} className="chip">{c.programTitle}</span>)}</div>
+        {a.linkedin&&<a href={a.linkedin} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{width:"100%"}}>Connect on LinkedIn</a>}
+      </div>)}</div>}
+  </div>);
+}
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
