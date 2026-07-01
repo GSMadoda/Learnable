@@ -14,6 +14,7 @@ import {
 import { api } from '../api.js'
 import { useUI } from '../state.jsx'
 import { Button, Spinner, Textarea } from '../ui.jsx'
+import { PRICE_LABEL } from '../config.js'
 
 const fmt = (secs) =>
   `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
@@ -26,6 +27,7 @@ export default function Course() {
   const [state, setState] = useState(null)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState(null) // { moduleIdx, lessonIdx, title } | { capstone:true }
+  const [paying, setPaying] = useState(false)
 
   const load = useCallback(async () => {
     const s = await api.courseState(id)
@@ -59,6 +61,29 @@ export default function Course() {
     }
   }, [load])
 
+  // Pay to unlock (upgrade a trial, or unlock after it expired).
+  const payNow = useCallback(async () => {
+    setPaying(true)
+    try {
+      const res = await api.enroll(id)
+      if (res.checkout_url) {
+        sessionStorage.setItem('lrn_pending_program', String(id))
+        window.location.href = res.checkout_url
+        return
+      }
+      if (res.alreadyEnrolled || res.devPaid) {
+        if (res.devPaid) toast('Unlocked (dev mode — no charge).', 'success')
+        await load()
+        return
+      }
+      toast('Could not start checkout. Try again.', 'error')
+    } catch (err) {
+      toast(err.message, 'error')
+    } finally {
+      setPaying(false)
+    }
+  }, [id, load, toast])
+
   if (error) {
     return (
       <div className="rounded-card border border-line bg-white px-6 py-12 text-center text-slate-500">
@@ -68,23 +93,35 @@ export default function Course() {
   }
   if (!state) return <Spinner label="Loading your course…" />
 
-  // Not enrolled → send to the program page to enroll.
+  // Not enrolled/active → either the trial ended (show a paywall) or send to the program page.
   if (!state.enrolled) {
+    const expired = state.trialExpired
     return (
       <div className="mx-auto max-w-[560px] rounded-panel border border-line bg-white p-8 text-center shadow-card">
         <Lock size={28} className="mx-auto mb-4 text-blue" />
         <h1 className="mb-2 font-display text-2xl font-extrabold text-ink-navy">
           {state.program.title}
         </h1>
-        <p className="mb-6 text-slate-500">Enroll to unlock the lessons, tutor, and credential.</p>
-        <Button size="lg" onClick={() => navigate(`/program/${id}`)}>
-          View & enroll
-        </Button>
+        <p className="mb-6 text-slate-500">
+          {expired
+            ? 'Your free trial has ended. Unlock the full course to keep learning and earn your credential.'
+            : 'Enroll to unlock the lessons, tutor, and credential.'}
+        </p>
+        {expired ? (
+          <Button size="lg" onClick={payNow} loading={paying}>
+            <Lock size={16} /> Unlock for {PRICE_LABEL}
+          </Button>
+        ) : (
+          <Button size="lg" onClick={() => navigate(`/program/${id}`)}>
+            View & enroll
+          </Button>
+        )}
       </div>
     )
   }
 
-  const { program, study, completed = [], total, lessonsDone, capstoneDone, allDone, credId } = state
+  const { program, study, completed = [], total, lessonsDone, capstoneDone, allDone, credId, paid, trial } =
+    state
   const doneSet = new Set(completed)
   const progressPct = total ? Math.round(((lessonsDone + (capstoneDone ? 1 : 0)) / (total + 1)) * 100) : 0
 
@@ -105,7 +142,45 @@ export default function Course() {
         <p className="text-slate-500">{program.subtitle}</p>
       </header>
 
-      {allDone && credId && (
+      {/* Trial countdown */}
+      {trial && (
+        <div className="mb-6 flex flex-col items-start justify-between gap-3 rounded-panel border border-blue/40 bg-blue-50 p-5 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <Sparkles size={22} className="flex-none text-blue" />
+            <div>
+              <div className="font-display font-bold text-ink-navy">
+                Free trial · {trial.daysLeft} day{trial.daysLeft === 1 ? '' : 's'} left
+              </div>
+              <div className="text-[13px] text-slate-500">
+                Enroll any time to keep this course for good and earn your credential.
+              </div>
+            </div>
+          </div>
+          <Button onClick={payNow} loading={paying} size="sm">
+            <Lock size={15} /> Unlock for {PRICE_LABEL}
+          </Button>
+        </div>
+      )}
+
+      {/* Finished on a trial → pay to claim the credential */}
+      {allDone && !paid && (
+        <div className="mb-6 flex flex-col items-start justify-between gap-3 rounded-panel border border-gold/40 bg-gold/[0.08] p-5 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={26} className="flex-none text-gold-text" />
+            <div>
+              <div className="font-display font-bold text-ink-navy">You've finished the course</div>
+              <div className="text-[13px] text-slate-500">
+                Enroll to lock in your progress and get your verifiable credential.
+              </div>
+            </div>
+          </div>
+          <Button onClick={payNow} loading={paying} variant="navy" size="sm">
+            Enroll for {PRICE_LABEL}
+          </Button>
+        </div>
+      )}
+
+      {allDone && paid && credId && (
         <div className="mb-6 flex flex-col items-start justify-between gap-3 rounded-panel border border-gold/40 bg-gold/[0.08] p-5 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <ShieldCheck size={26} className="text-gold-text" />

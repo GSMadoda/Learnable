@@ -48,6 +48,7 @@ export const api = {
   getProgram: (id) => req(`/api/programs/${id}`),
   programCv: (id) => req(`/api/programs/${id}/cv`, { method: 'POST' }),
   enroll: (id) => req(`/api/programs/${id}/enroll`, { method: 'POST' }),
+  startTrial: (id) => req(`/api/programs/${id}/trial`, { method: 'POST' }),
   verifyPayment: (ref) => req(`/api/payments/verify?ref=${encodeURIComponent(ref)}`),
 
   // course player

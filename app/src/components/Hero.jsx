@@ -109,7 +109,7 @@ export default function Hero() {
             </a>
           </div>
           <p className="mt-[18px] text-sm text-slate-500">
-            Generate any curriculum free. Enroll a program when you're ready.
+            Start with a 7-day free trial. No card to start.
           </p>
         </div>
 

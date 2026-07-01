@@ -19,7 +19,7 @@ export default function ClosingCTA({ variant = 'navy' }) {
           Start learning something real.
         </h2>
         <p className="mx-auto mb-8 max-w-[440px] text-lg leading-[1.6] text-white/[0.78]">
-          One skill. Five modules. One project. Build your plan free, learn it, and prove it.
+          One skill. Five modules. One project. Start free for 7 days — learn it, then prove it.
         </p>
         <button
           type="button"

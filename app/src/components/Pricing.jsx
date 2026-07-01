@@ -4,11 +4,11 @@ import { PRICE_LABEL } from '../config.js'
 
 const tiers = [
   {
-    label: 'Explore',
-    price: 'Free',
+    label: 'Free trial',
+    price: '7 days',
     suffix: null,
-    sub: 'no card needed',
-    body: ['Generate any curriculum.', 'Preview all modules & the capstone.'],
+    sub: 'full access, no card',
+    body: ['The whole course, tutor & sessions.', 'Try it before you pay.'],
     highlight: false,
   },
   {
@@ -44,11 +44,11 @@ export default function Pricing() {
             Pricing
           </p>
           <h2 className="mx-auto mb-3.5 max-w-[560px] font-display text-[30px] font-extrabold leading-[1.05] tracking-[-0.025em] text-ink-navy lg:text-[40px]">
-            Plan for free. Pay once per program.
+            Try it free. Then pay once.
           </h2>
           <p className="mx-auto max-w-[500px] text-lg leading-[1.6] text-slate-700">
-            Build any curriculum at no cost. Enroll when you're ready — one payment, and that
-            program (with its credential) is yours to keep.
+            Start any course with a 7-day free trial — full access, no card. Keep it forever, with
+            its credential, for a single payment.
           </p>
         </div>
 
