@@ -486,26 +486,6 @@ app.post("/api/payments/webhook", express.raw({ type: "*/*" }), async (req, res)
   } catch (e) { console.error("webhook:", e.message); res.sendStatus(200); }
 });
 
-// Diagnostic: ask Dodo for the configured product using the app's exact key/env,
-// so we can see whether this key can actually see this product. Never exposes the key.
-app.get("/api/_dodo_check", requireAuth, async (req, res) => {
-  if (!DODO_KEY || !DODO_PRODUCT_ID) return res.json({ configured: false, mode: DODO_MODE || "test" });
-  try {
-    const r = await fetch(`${DODO_BASE}/products/${DODO_PRODUCT_ID}`, { headers: { Authorization: `Bearer ${DODO_KEY}` } });
-    const text = await r.text();
-    let body; try { body = JSON.parse(text); } catch { body = text; }
-    res.json({
-      base: DODO_BASE,
-      productId: DODO_PRODUCT_ID,
-      status: r.status,
-      found: r.ok,
-      productName: body && typeof body === "object" ? (body.name || null) : null,
-      isRecurring: body && typeof body === "object" ? !!(body.recurring || body.subscription || body.price_type === "recurring") : null,
-      message: dodoErrorDetail(body) || (typeof body === "string" ? body.slice(0, 200) : undefined),
-    });
-  } catch (e) { res.json({ error: e.message }); }
-});
-
 /* ----------------------------- COURSE (enrolled only) ----------------------------- */
 async function computeCourseState(enr) {
   // Roll / pause the 2-week study window.
