@@ -27,13 +27,30 @@ const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const FROM_EMAIL = process.env.FROM_EMAIL || "Learnable <support@getlearnable.org>";
-const EMAIL_ON = !!(SMTP_USER && SMTP_PASS);
+// Resend (HTTPS email API) — preferred when set. Sends over 443, so it works even
+// where hosts block outbound SMTP, and its domain verification wires up SPF/DKIM.
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const EMAIL_ON = !!(RESEND_API_KEY || (SMTP_USER && SMTP_PASS));
 let mailer = null;
-if (EMAIL_ON) { try { mailer = require("nodemailer").createTransport({ host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_PORT === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } }); } catch (e) { console.warn("[warn] nodemailer not available:", e.message); } }
-if (!EMAIL_ON) console.warn("[warn] SMTP not set — magic links & password resets will be returned in the API response in dev instead of emailed.");
+if (SMTP_USER && SMTP_PASS) { try { mailer = require("nodemailer").createTransport({ host: SMTP_HOST, port: SMTP_PORT, secure: SMTP_PORT === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } }); } catch (e) { console.warn("[warn] nodemailer not available:", e.message); } }
+if (RESEND_API_KEY) console.log("[email] using Resend API for outbound email.");
+else if (!EMAIL_ON) console.warn("[warn] No email transport set (RESEND_API_KEY or SMTP_USER/SMTP_PASS) — magic links & resets return a dev link in the API response instead of emailing.");
 if (!GOOGLE_CLIENT_ID) console.warn("[warn] GOOGLE_CLIENT_ID not set — Google sign-in disabled.");
 
 async function sendEmail(to, subject, html) {
+  // Prefer Resend when configured; fall back to SMTP.
+  if (RESEND_API_KEY) {
+    try {
+      const r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+      });
+      if (r.ok) return true;
+      console.error("resend send failed:", r.status, await r.text().catch(() => ""));
+      return false;
+    } catch (e) { console.error("resend error:", e.message); return false; }
+  }
   if (!mailer) return false;
   try { await mailer.sendMail({ from: FROM_EMAIL, to, subject, html }); return true; }
   catch (e) { console.error("email send failed:", e.message); return false; }
