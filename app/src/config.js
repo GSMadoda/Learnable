@@ -7,3 +7,6 @@
 // the Dodo product price), update this string so the marketing figure stays truthful.
 export const PRICE_LABEL = '$35'
 export const PRICE_TAGLINE = 'One payment per program. Yours to keep, forever.'
+
+// Free-trial length shown in the UI. Mirrors the server's TRIAL_DAYS (default 7).
+export const TRIAL_DAYS = 7

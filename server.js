@@ -79,6 +79,10 @@ const DODO_COUNTRY = process.env.DODO_COUNTRY || "ZA";
 const STUDY_MINUTES_REQUIRED = Number(process.env.STUDY_MINUTES_REQUIRED || 30);
 const STUDY_PERIOD_DAYS = Number(process.env.STUDY_PERIOD_DAYS || 14);
 
+// Free trial: new users get full course access for this many days, then it locks
+// until they pay. The credential is only issued on a paid enrollment.
+const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || 7);
+
 if (!ANTHROPIC_KEY) console.warn("[warn] ANTHROPIC_API_KEY not set — using sample fallbacks.");
 if (!DODO_KEY || !DODO_PRODUCT_ID) console.warn("[warn] Dodo not fully configured — enrollment runs in DEV MODE (simulated payment).");
 
@@ -112,6 +116,26 @@ async function generateJSON(prompt, fallback, maxTokens = 1500) {
 async function getPaidEnrollment(userId, programId) {
   const arr = await store.enrollments.find({ user_id: Number(userId), program_id: Number(programId), status: "paid" }).sort({ id: -1 }).toArray();
   return arr[0] || null;
+}
+// The user's (single) enrollment for a program, whatever its status.
+async function getEnrollment(userId, programId) {
+  const arr = await store.enrollments.find({ user_id: Number(userId), program_id: Number(programId) }).sort({ id: -1 }).toArray();
+  return arr[0] || null;
+}
+function trialActive(enr) {
+  return !!(enr && enr.status === "trial" && enr.trial_expires && new Date(enr.trial_expires).getTime() > Date.now());
+}
+// Access is granted while paid, or during an unexpired trial.
+function enrollmentActive(enr) {
+  return !!(enr && (enr.status === "paid" || trialActive(enr)));
+}
+async function getActiveEnrollment(userId, programId) {
+  const enr = await getEnrollment(userId, programId);
+  return enrollmentActive(enr) ? enr : null;
+}
+// One free trial per user, ever (the flag survives a later upgrade to paid).
+async function hasUsedTrial(userId) {
+  return !!(await store.enrollments.findOne({ user_id: Number(userId), is_trial: true }));
 }
 
 /* ----------------------------- auth ----------------------------- */
@@ -327,9 +351,10 @@ async function issueCertificate(user, program) {
 }
 async function activateEnrollment(userId, programId, reference, paymentId) {
   const now = new Date().toISOString();
-  const existing = await store.enrollments.findOne({ reference });
+  // Upgrade the user's existing enrollment for this program (trial/pending) to paid.
+  const existing = await getEnrollment(userId, programId);
   if (existing) {
-    await store.enrollments.updateOne({ id: existing.id }, { $set: { status: "paid", period_start: now, course_status: "active", payment_id: paymentId || null } });
+    await store.enrollments.updateOne({ id: existing.id }, { $set: { status: "paid", period_start: existing.period_start || now, course_status: "active", payment_id: paymentId || null, reference } });
   } else {
     const id = await store.nextId("enrollments");
     await store.enrollments.insertOne({ id, user_id: Number(userId), program_id: Number(programId), status: "paid",
@@ -342,7 +367,8 @@ app.post("/api/programs/:id/enroll", requireAuth, async (req, res) => {
   const r = await store.programs.findOne({ id: Number(req.params.id) });
   if (!r) return res.status(404).json({ error: "Program not found." });
   const program = rowProgram(r);
-  if (await getPaidEnrollment(req.user.id, program.id)) return res.json({ alreadyEnrolled: true });
+  const existing = await getEnrollment(req.user.id, program.id);
+  if (existing && existing.status === "paid") return res.json({ alreadyEnrolled: true });
   const reference = "lrn_" + crypto.randomBytes(8).toString("hex");
 
   if (!DODO_KEY || !DODO_PRODUCT_ID) { // DEV MODE
@@ -350,10 +376,14 @@ app.post("/api/programs/:id/enroll", requireAuth, async (req, res) => {
     return res.json({ devPaid: true });
   }
   try {
-    const id = await store.nextId("enrollments");
-    await store.enrollments.insertOne({ id, user_id: Number(req.user.id), program_id: Number(program.id), status: "pending",
-      amount: Math.round(PRICE * 100), currency: "USD", reference, payment_id: null,
-      period_start: null, minutes_period: 0, last_active: null, course_status: "active", created_at: new Date().toISOString() });
+    if (existing) {
+      await store.enrollments.updateOne({ id: existing.id }, { $set: { status: "pending", reference, payment_id: null } });
+    } else {
+      const id = await store.nextId("enrollments");
+      await store.enrollments.insertOne({ id, user_id: Number(req.user.id), program_id: Number(program.id), status: "pending",
+        amount: Math.round(PRICE * 100), currency: "USD", reference, payment_id: null,
+        period_start: null, minutes_period: 0, last_active: null, course_status: "active", created_at: new Date().toISOString() });
+    }
     const r2 = await fetch(`${DODO_BASE}/payments`, {
       method: "POST", headers: { Authorization: `Bearer ${DODO_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -370,6 +400,31 @@ app.post("/api/programs/:id/enroll", requireAuth, async (req, res) => {
     await store.enrollments.updateOne({ reference }, { $set: { payment_id: data.payment_id || null } });
     res.json({ checkout_url: data.payment_link, reference });
   } catch (e) { console.error("dodo enroll:", e.message); res.status(502).json({ error: "Could not start payment. Try again." }); }
+});
+
+// Start a free trial (no payment) — full access for TRIAL_DAYS, one per user.
+app.post("/api/programs/:id/trial", requireAuth, async (req, res) => {
+  const r = await store.programs.findOne({ id: Number(req.params.id) });
+  if (!r) return res.status(404).json({ error: "Program not found." });
+  const program = rowProgram(r);
+  const existing = await getEnrollment(req.user.id, program.id);
+  if (existing && existing.status === "paid") return res.json({ alreadyEnrolled: true });
+  if (trialActive(existing)) return res.json({ trial: true, expiresAt: existing.trial_expires });
+  if (await hasUsedTrial(req.user.id))
+    return res.status(403).json({ error: "You've already used your free trial. Enroll to keep learning." });
+  const now = new Date();
+  const expires = new Date(now.getTime() + TRIAL_DAYS * 86400000).toISOString();
+  if (existing) {
+    await store.enrollments.updateOne({ id: existing.id }, { $set: { status: "trial", is_trial: true,
+      trial_expires: expires, period_start: now.toISOString(), minutes_period: 0, course_status: "active" } });
+  } else {
+    const id = await store.nextId("enrollments");
+    await store.enrollments.insertOne({ id, user_id: Number(req.user.id), program_id: Number(program.id), status: "trial",
+      is_trial: true, trial_expires: expires, amount: Math.round(PRICE * 100), currency: "USD",
+      reference: "trial_" + crypto.randomBytes(6).toString("hex"), payment_id: null,
+      period_start: now.toISOString(), minutes_period: 0, last_active: null, course_status: "active", created_at: now.toISOString() });
+  }
+  res.json({ trial: true, expiresAt: expires });
 });
 
 // Called when Dodo redirects back to ?ref=...
@@ -432,8 +487,13 @@ app.get("/api/courses/:id/state", requireAuth, async (req, res) => {
   const r = await store.programs.findOne({ id: Number(req.params.id) });
   if (!r) return res.status(404).json({ error: "Program not found." });
   const program = rowProgram(r);
-  const enr = await getPaidEnrollment(req.user.id, program.id);
-  if (!enr) return res.json({ enrolled: false, program });
+  const enr = await getEnrollment(req.user.id, program.id);
+  if (!enrollmentActive(enr)) {
+    return res.json({ enrolled: false, program,
+      trialExpired: !!(enr && enr.is_trial),
+      trialAvailable: !(await hasUsedTrial(req.user.id)) });
+  }
+  const paid = enr.status === "paid";
   const study = await computeCourseState(enr);
   const prog = await store.progress.find({ user_id: Number(req.user.id), program_id: program.id }).toArray();
   const done = new Set(prog.filter((p) => p.completed).map((p) => p.lesson_key));
@@ -441,9 +501,13 @@ app.get("/api/courses/:id/state", requireAuth, async (req, res) => {
   const capstoneDone = done.has("capstone");
   const lessonsDone = [...done].filter((k) => k !== "capstone").length;
   const allDone = lessonsDone >= total && capstoneDone;
+  // Credential is only issued on a paid enrollment (trials don't earn one).
   let cred = null;
-  if (allDone) { const u = await store.users.findOne({ id: Number(req.user.id) }); cred = await issueCertificate(u, program); }
-  res.json({ enrolled: true, program, study, completed: [...done], total, lessonsDone, capstoneDone, allDone, credId: cred });
+  if (allDone && paid) { const u = await store.users.findOne({ id: Number(req.user.id) }); cred = await issueCertificate(u, program); }
+  const trial = trialActive(enr)
+    ? { expiresAt: enr.trial_expires, daysLeft: Math.max(0, Math.ceil((new Date(enr.trial_expires).getTime() - Date.now()) / 86400000)) }
+    : null;
+  res.json({ enrolled: true, paid, trial, program, study, completed: [...done], total, lessonsDone, capstoneDone, allDone, credId: cred });
 });
 
 app.post("/api/courses/:id/lesson", requireAuth, async (req, res) => {
@@ -451,7 +515,7 @@ app.post("/api/courses/:id/lesson", requireAuth, async (req, res) => {
   const r = await store.programs.findOne({ id: Number(req.params.id) });
   if (!r) return res.status(404).json({ error: "Program not found." });
   const program = rowProgram(r);
-  if (!await getPaidEnrollment(req.user.id, program.id)) return res.status(403).json({ error: "Enroll to access lessons." });
+  if (!await getActiveEnrollment(req.user.id, program.id)) return res.status(403).json({ error: "Start a free trial or enroll to access lessons." });
   const key = `${moduleIdx}-${lessonIdx}`;
   const cached = await store.lesson_content.findOne({ program_id: program.id, lesson_key: key });
   if (cached) return res.json({ lesson: JSON.parse(cached.content) });
@@ -473,7 +537,7 @@ Exactly 3 quiz questions. Make the correct answer index accurate.`;
 
 app.post("/api/courses/:id/progress", requireAuth, async (req, res) => {
   const { lessonKey, quizScore } = req.body || {};
-  if (!await getPaidEnrollment(req.user.id, req.params.id)) return res.status(403).json({ error: "Not enrolled." });
+  if (!await getActiveEnrollment(req.user.id, req.params.id)) return res.status(403).json({ error: "Not enrolled." });
   await store.progress.updateOne(
     { user_id: Number(req.user.id), program_id: Number(req.params.id), lesson_key: String(lessonKey) },
     { $set: { completed: 1, quiz_score: quizScore ?? null, updated_at: new Date().toISOString() } }, { upsert: true });
@@ -482,7 +546,7 @@ app.post("/api/courses/:id/progress", requireAuth, async (req, res) => {
 
 // Study heartbeat: +1 minute of study time toward the current window.
 app.post("/api/courses/:id/heartbeat", requireAuth, async (req, res) => {
-  const enr = await getPaidEnrollment(req.user.id, req.params.id);
+  const enr = await getActiveEnrollment(req.user.id, req.params.id);
   if (!enr) return res.status(403).json({ error: "Not enrolled." });
   const now = new Date().toISOString();
   let mins = (enr.minutes_period || 0) + 1;
@@ -502,7 +566,7 @@ app.post("/api/courses/:id/tutor", requireAuth, async (req, res) => {
   const r = await store.programs.findOne({ id: Number(req.params.id) });
   if (!r) return res.status(404).json({ error: "Program not found." });
   const program = rowProgram(r);
-  if (!await getPaidEnrollment(req.user.id, program.id)) return res.status(403).json({ error: "Enroll to use the tutor." });
+  if (!await getActiveEnrollment(req.user.id, program.id)) return res.status(403).json({ error: "Start a free trial or enroll to use the tutor." });
   if (!anthropic) return res.json({ reply: "The AI tutor needs an ANTHROPIC_API_KEY configured on the server. Once it's set, I'll answer your questions about this lesson." });
   try {
     const system = `You are a patient, encouraging tutor helping a learner master "${program.goal}".${lessonTitle ? ` They are on the lesson "${lessonTitle}".` : ""} Keep replies concise and concrete. Use plain language, small examples, and ask a guiding question when it helps them think. Never do their capstone for them — coach instead.`;
@@ -513,7 +577,7 @@ app.post("/api/courses/:id/tutor", requireAuth, async (req, res) => {
 });
 
 app.post("/api/courses/:id/capstone", requireAuth, async (req, res) => {
-  if (!await getPaidEnrollment(req.user.id, req.params.id)) return res.status(403).json({ error: "Not enrolled." });
+  if (!await getActiveEnrollment(req.user.id, req.params.id)) return res.status(403).json({ error: "Not enrolled." });
   await store.progress.updateOne(
     { user_id: Number(req.user.id), program_id: Number(req.params.id), lesson_key: "capstone" },
     { $set: { completed: 1, updated_at: new Date().toISOString() } }, { upsert: true });

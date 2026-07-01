@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, Clock, ShieldCheck, Lock } from 'lucide-react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, Check, Clock, ShieldCheck, Lock, Sparkles } from 'lucide-react'
 import { api } from '../api.js'
 import { useAuth, useUI } from '../state.jsx'
 import { Button, Spinner, Pill } from '../ui.jsx'
-import { PRICE_LABEL, PRICE_TAGLINE } from '../config.js'
+import { PRICE_LABEL, PRICE_TAGLINE, TRIAL_DAYS } from '../config.js'
 
-// Review a generated program and enroll (one-time payment via Dodo, per the backend).
+// Review a generated program, then start a free trial or pay to enroll.
 export default function ProgramView() {
   const { id } = useParams()
   const { user } = useAuth()
@@ -14,23 +14,36 @@ export default function ProgramView() {
   const navigate = useNavigate()
 
   const [program, setProgram] = useState(null)
+  const [status, setStatus] = useState(null) // courseState (when signed in)
+  const [statusLoaded, setStatusLoaded] = useState(false)
   const [error, setError] = useState('')
   const [enrolling, setEnrolling] = useState(false)
+  const [trialing, setTrialing] = useState(false)
 
   useEffect(() => {
     let alive = true
     ;(async () => {
       try {
-        const { program } = await api.getProgram(id)
-        if (alive) setProgram(program)
+        if (user) {
+          // courseState returns the program plus this user's enrollment status.
+          const s = await api.courseState(id)
+          if (!alive) return
+          setProgram(s.program)
+          setStatus(s)
+        } else {
+          const { program } = await api.getProgram(id)
+          if (alive) setProgram(program)
+        }
       } catch (err) {
         if (alive) setError(err.message)
+      } finally {
+        if (alive) setStatusLoaded(true)
       }
     })()
     return () => {
       alive = false
     }
-  }, [id])
+  }, [id, user])
 
   async function onEnroll() {
     if (!user) {
@@ -41,8 +54,6 @@ export default function ProgramView() {
     try {
       const res = await api.enroll(id)
       if (res.checkout_url) {
-        // Remember which program we're buying so the ?ref return can drop the
-        // learner straight into their course (verify only tells us "paid").
         sessionStorage.setItem('lrn_pending_program', String(id))
         window.location.href = res.checkout_url // hosted Dodo checkout
         return
@@ -60,6 +71,27 @@ export default function ProgramView() {
     }
   }
 
+  async function onTrial() {
+    if (!user) {
+      openAuth('signup')
+      return
+    }
+    setTrialing(true)
+    try {
+      const res = await api.startTrial(id)
+      if (res.trial || res.alreadyEnrolled) {
+        if (res.trial) toast('Your free trial has started.', 'success')
+        navigate(`/course/${id}`)
+        return
+      }
+      toast('Could not start your trial. Try again.', 'error')
+    } catch (err) {
+      toast(err.message, 'error')
+    } finally {
+      setTrialing(false)
+    }
+  }
+
   if (error) {
     return (
       <div className="rounded-card border border-line bg-white px-6 py-12 text-center text-slate-500">
@@ -68,6 +100,11 @@ export default function ProgramView() {
     )
   }
   if (!program) return <Spinner label="Loading program…" />
+
+  const enrolled = status?.enrolled
+  const trialEnded = status?.trialExpired
+  // Offer the trial to signed-out visitors and to signed-in users who still have it.
+  const canTrial = !user || (statusLoaded && !enrolled && status?.trialAvailable && !trialEnded)
 
   return (
     <div className="mx-auto max-w-[820px]">
@@ -147,31 +184,78 @@ export default function ProgramView() {
         )}
       </div>
 
-      {/* Enroll */}
+      {/* Enroll / Trial */}
       <div className="rounded-panel border-[1.5px] border-blue bg-white p-6 shadow-pricing sm:p-8">
-        <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-          <div>
-            <div className="font-display text-[34px] font-extrabold tracking-[-0.02em] text-ink-navy">
-              {PRICE_LABEL} <span className="text-base font-semibold text-slate-400">one-time</span>
+        {enrolled ? (
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <div className="font-display text-2xl font-extrabold text-ink-navy">You're in.</div>
+              <div className="text-sm text-slate-500">
+                {status.paid
+                  ? 'Full access — lifetime.'
+                  : `Free trial · ${status.trial?.daysLeft} day${status.trial?.daysLeft === 1 ? '' : 's'} left`}
+              </div>
             </div>
-            <div className="text-sm text-slate-500">{PRICE_TAGLINE}</div>
+            <Button as={Link} to={`/course/${id}`} size="lg">
+              Continue to course
+            </Button>
           </div>
-          <Button size="lg" onClick={onEnroll} loading={enrolling}>
-            <Lock size={16} /> {user ? 'Enroll & unlock the course' : 'Sign in to enroll'}
-          </Button>
-        </div>
-        <ul className="mt-5 grid grid-cols-1 gap-2 text-[14px] text-slate-700 sm:grid-cols-2">
-          {[
-            'AI-tutored, focused study sessions',
-            'A test Claude writes from your curriculum',
-            'A verifiable credential on completion',
-            'Lifetime access to this program',
-          ].map((f) => (
-            <li key={f} className="flex items-center gap-2">
-              <Check size={16} className="flex-none text-blue" /> {f}
-            </li>
-          ))}
-        </ul>
+        ) : (
+          <>
+            <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
+              <div>
+                {canTrial ? (
+                  <>
+                    <div className="font-display text-[34px] font-extrabold tracking-[-0.02em] text-ink-navy">
+                      {TRIAL_DAYS} days free
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      Full access. Then {PRICE_LABEL} one-time to keep it and earn the credential.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="font-display text-[34px] font-extrabold tracking-[-0.02em] text-ink-navy">
+                      {PRICE_LABEL} <span className="text-base font-semibold text-slate-400">one-time</span>
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {trialEnded ? 'Your free trial has ended — unlock to continue.' : PRICE_TAGLINE}
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+                {canTrial && (
+                  <Button size="lg" onClick={onTrial} loading={trialing} className="w-full sm:w-auto">
+                    <Sparkles size={16} /> {user ? `Start ${TRIAL_DAYS}-day free trial` : 'Start free trial'}
+                  </Button>
+                )}
+                <Button
+                  size={canTrial ? 'sm' : 'lg'}
+                  variant={canTrial ? 'ghost' : 'primary'}
+                  onClick={onEnroll}
+                  loading={enrolling}
+                  className="w-full sm:w-auto"
+                >
+                  {!canTrial && <Lock size={16} />}
+                  {canTrial ? `Or pay ${PRICE_LABEL} now` : user ? 'Enroll & unlock the course' : `Pay ${PRICE_LABEL}`}
+                </Button>
+              </div>
+            </div>
+            <ul className="mt-5 grid grid-cols-1 gap-2 text-[14px] text-slate-700 sm:grid-cols-2">
+              {[
+                'AI-tutored, focused study sessions',
+                'A test Claude writes from your curriculum',
+                'A verifiable credential when you enroll',
+                'Lifetime access once you pay',
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2">
+                  <Check size={16} className="flex-none text-blue" /> {f}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
     </div>
   )
