@@ -14,7 +14,7 @@ export default function Privacy() {
     },
     {
       h: 'How we use your data',
-      p: 'We use your information to provide the service: to build and tutor your curriculum, track your progress, issue and verify your credentials, and — only if you opt in — list you in the alumni directory. Curriculum, lessons, and tutoring are generated with Anthropic’s Claude API.',
+      p: 'We use your information to provide the service: to build and tutor your curriculum, track your progress, issue and verify your credentials, and — only if you opt in — list you in the alumni directory. Curriculum, lessons, and tutoring are generated using a third-party AI provider.',
     },
     {
       h: 'The alumni directory',

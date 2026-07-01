@@ -10,7 +10,7 @@ export default function About() {
       <div className="flex flex-col gap-6 leading-[1.7] text-slate-700">
         <p>
           Most online learning is easy to start and easy to abandon. Learnable is built around the
-          opposite idea: you commit to a session, and you stay in it until the timer ends. Claude
+          opposite idea: you commit to a session, and you stay in it until the timer ends. Learnable
           designs a curriculum for whatever you want to master, tutors you in real time, and tests
           you — and when you finish, you earn a credential you can actually point to.
         </p>
@@ -20,7 +20,7 @@ export default function About() {
             How it works
           </h2>
           <ol className="ml-5 list-decimal space-y-2">
-            <li>Name a subject and your reason. Claude builds a five-module path with a capstone.</li>
+            <li>Name a subject and your reason. Learnable builds a five-module path with a capstone.</li>
             <li>Enroll to unlock focused, AI-tutored study sessions.</li>
             <li>Work through the lessons and pass the test written from your own curriculum.</li>
             <li>Finish the capstone and earn a verifiable credential — a unique ID and a public page.</li>

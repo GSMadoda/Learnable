@@ -4,13 +4,13 @@ const features = [
   {
     icon: MessageSquare,
     title: 'Real-time tutor',
-    body: "Ask Claude anything the moment you're stuck. Explanations, examples, and materials, generated for you.",
+    body: "Ask Learnable anything the moment you're stuck. Explanations, examples, and materials, generated for you.",
     gold: false,
   },
   {
     icon: BookOpen,
     title: 'Personal curriculum',
-    body: 'Tell us the subject and your months. Claude maps a complete path and schedules it around your days.',
+    body: 'Tell us the subject and your months. Learnable maps a complete path and schedules it around your days.',
     gold: false,
   },
   {
