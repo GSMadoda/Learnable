@@ -1,8 +1,14 @@
+import { useNavigate } from 'react-router-dom'
+import { useAuth, useUI } from '../state.jsx'
+
 export default function ClosingCTA({ variant = 'navy' }) {
+  const { user } = useAuth()
+  const { openAuth } = useUI()
+  const navigate = useNavigate()
+  const start = () => (user ? navigate('/app') : openAuth('signup'))
+
   const bg =
-    variant === 'blue'
-      ? 'bg-[linear-gradient(135deg,#2563EB,#1E3A8A)]'
-      : 'bg-ink-navy'
+    variant === 'blue' ? 'bg-[linear-gradient(135deg,#2563EB,#1E3A8A)]' : 'bg-ink-navy'
 
   return (
     <section id="start" className="px-5 pb-[100px] pt-5 sm:px-7">
@@ -13,17 +19,16 @@ export default function ClosingCTA({ variant = 'navy' }) {
           Start learning something real.
         </h2>
         <p className="mx-auto mb-8 max-w-[440px] text-lg leading-[1.6] text-white/[0.78]">
-          One skill. Five modules. One project. Learn it, and prove it — starting today.
+          One skill. Five modules. One project. Build your plan free, learn it, and prove it.
         </p>
-        <a
-          href="#"
+        <button
+          type="button"
+          onClick={start}
           className="inline-block rounded-btn bg-white px-[30px] py-[15px] text-base font-semibold text-ink-navy transition-transform hover:scale-[1.03]"
         >
-          Start your free trial
-        </a>
-        <p className="mt-5 font-mono text-xs tracking-[0.08em] text-white/60">
-          Learn it. Prove it.
-        </p>
+          Start free
+        </button>
+        <p className="mt-5 font-mono text-xs tracking-[0.08em] text-white/60">Learn it. Prove it.</p>
       </div>
     </section>
   )

@@ -1,3 +1,6 @@
+import { useNavigate } from 'react-router-dom'
+import { useAuth, useUI } from '../state.jsx'
+
 function SessionMock() {
   return (
     <div className="overflow-hidden rounded-panel border border-white/10 bg-ink-navy shadow-mock">
@@ -58,6 +61,11 @@ function SessionMock() {
 }
 
 export default function Hero() {
+  const { user } = useAuth()
+  const { openAuth } = useUI()
+  const navigate = useNavigate()
+  const start = () => (user ? navigate('/app') : openAuth('signup'))
+
   return (
     <section
       id="top"
@@ -86,20 +94,23 @@ export default function Hero() {
             you into focused sessions — then tests you and issues a credential you can point to.
           </p>
           <div className="flex flex-wrap items-center gap-3.5">
-            <a
-              href="#start"
+            <button
+              type="button"
+              onClick={start}
               className="rounded-btn bg-blue px-[26px] py-3.5 text-base font-semibold text-white transition-colors hover:bg-blue-hover active:bg-blue-press"
             >
-              Start free trial
-            </a>
+              Start free
+            </button>
             <a
-              href="#product"
+              href="#build"
               className="rounded-btn border border-line bg-white px-6 py-[13px] text-base font-semibold text-ink-navy transition-colors hover:bg-blue-50"
             >
-              Watch a session
+              Build a plan
             </a>
           </div>
-          <p className="mt-[18px] text-sm text-slate-500">7-day free trial. No card to start.</p>
+          <p className="mt-[18px] text-sm text-slate-500">
+            Generate any curriculum free. Enroll a program when you're ready.
+          </p>
         </div>
 
         <SessionMock />

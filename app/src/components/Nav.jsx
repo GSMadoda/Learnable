@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
+import { useAuth, useUI } from '../state.jsx'
 import { LogoMark, Wordmark } from './Brand.jsx'
 
 const links = [
@@ -10,6 +12,17 @@ const links = [
 
 export default function Nav() {
   const [open, setOpen] = useState(false)
+  const { user } = useAuth()
+  const { openAuth } = useUI()
+  const navigate = useNavigate()
+
+  // Primary CTA: signed-in → dashboard; signed-out → sign-up modal.
+  function start() {
+    setOpen(false)
+    if (user) navigate('/app')
+    else openAuth('signup')
+  }
+  const ctaLabel = user ? 'Dashboard' : 'Start free'
 
   return (
     <nav className="sticky top-0 z-50 border-b border-line bg-white/[0.82] backdrop-blur-md">
@@ -30,22 +43,33 @@ export default function Nav() {
               {l.label}
             </a>
           ))}
-          <a
-            href="#start"
+          {!user && (
+            <button
+              type="button"
+              onClick={() => openAuth('login')}
+              className="text-[15px] font-medium text-slate-700 transition-colors hover:text-ink-navy"
+            >
+              Sign in
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={start}
             className="rounded-btn bg-blue px-[18px] py-[9px] text-[14.5px] font-semibold text-white transition-colors hover:bg-blue-hover active:bg-blue-press"
           >
-            Start free
-          </a>
+            {ctaLabel}
+          </button>
         </div>
 
         {/* Mobile controls */}
         <div className="flex items-center gap-3 md:hidden">
-          <a
-            href="#start"
+          <button
+            type="button"
+            onClick={start}
             className="rounded-btn bg-blue px-4 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-blue-hover active:bg-blue-press"
           >
-            Start free
-          </a>
+            {ctaLabel}
+          </button>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -72,6 +96,18 @@ export default function Nav() {
                 {l.label}
               </a>
             ))}
+            {!user && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  openAuth('login')
+                }}
+                className="py-3.5 text-left text-[15px] font-medium text-slate-700 hover:text-ink-navy"
+              >
+                Sign in
+              </button>
+            )}
           </div>
         </div>
       )}

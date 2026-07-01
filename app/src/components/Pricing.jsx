@@ -1,32 +1,41 @@
+import { useNavigate } from 'react-router-dom'
+import { useAuth, useUI } from '../state.jsx'
+import { PRICE_LABEL } from '../config.js'
+
 const tiers = [
   {
-    label: 'Trial',
+    label: 'Explore',
     price: 'Free',
     suffix: null,
-    sub: 'for 7 days',
-    body: ['Full access to everything.', 'No card required.'],
+    sub: 'no card needed',
+    body: ['Generate any curriculum.', 'Preview all modules & the capstone.'],
     highlight: false,
   },
   {
-    label: 'Getting started',
-    price: '$25',
+    label: 'Enroll',
+    price: PRICE_LABEL,
     suffix: null,
-    sub: 'your first month',
-    body: ['Unlimited subjects.', 'Cancel anytime.'],
+    sub: 'one-time, per program',
+    body: ['AI tutor + locked focus sessions.', 'Test, credential & lifetime access.'],
     highlight: true,
-    badge: 'First month',
+    badge: 'Most popular',
   },
   {
-    label: 'Ongoing',
-    price: '$15',
-    suffix: '/mo',
-    sub: 'every month after',
-    body: ['Keep learning anything.', 'Credentials stay yours.'],
+    label: 'Credential',
+    price: 'Included',
+    suffix: null,
+    sub: 'when you finish',
+    body: ['A unique, verifiable ID.', 'A public page — yours forever.'],
     highlight: false,
   },
 ]
 
 export default function Pricing() {
+  const { user } = useAuth()
+  const { openAuth } = useUI()
+  const navigate = useNavigate()
+  const start = () => (user ? navigate('/app') : openAuth('signup'))
+
   return (
     <section id="pricing" className="px-5 py-[60px] sm:px-7 lg:py-24">
       <div className="mx-auto max-w-[1120px]">
@@ -35,10 +44,11 @@ export default function Pricing() {
             Pricing
           </p>
           <h2 className="mx-auto mb-3.5 max-w-[560px] font-display text-[30px] font-extrabold leading-[1.05] tracking-[-0.025em] text-ink-navy lg:text-[40px]">
-            One subscription. Every subject.
+            Plan for free. Pay once per program.
           </h2>
           <p className="mx-auto max-w-[500px] text-lg leading-[1.6] text-slate-700">
-            Start free for a week. Keep going for the price of a couple of coffees.
+            Build any curriculum at no cost. Enroll when you're ready — one payment, and that
+            program (with its credential) is yours to keep.
           </p>
         </div>
 
@@ -46,7 +56,7 @@ export default function Pricing() {
           {tiers.map((t) => (
             <div
               key={t.label}
-              className={`relative rounded-card bg-white px-[26px] py-[30px] ${
+              className={`relative flex flex-col rounded-card bg-white px-[26px] py-[30px] ${
                 t.highlight
                   ? 'border-[1.5px] border-blue shadow-pricing'
                   : 'border border-line shadow-card'
@@ -72,6 +82,15 @@ export default function Pricing() {
                   <div key={i}>{line}</div>
                 ))}
               </div>
+              {t.highlight && (
+                <button
+                  type="button"
+                  onClick={start}
+                  className="mt-6 w-full rounded-btn bg-blue px-5 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-blue-hover active:bg-blue-press"
+                >
+                  Start free
+                </button>
+              )}
             </div>
           ))}
         </div>
