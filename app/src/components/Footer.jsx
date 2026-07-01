@@ -1,23 +1,41 @@
+import { Link } from 'react-router-dom'
 import { LogoMark, Wordmark } from './Brand.jsx'
 
+// `kind`: 'route' → internal Link, 'anchor' → same/other-page hash, 'external' → mailto/href.
 const columns = [
   {
     heading: 'Product',
     links: [
-      { label: 'Features', href: '#product' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'Verify a credential', href: '#' },
+      { label: 'Features', to: '/#product', kind: 'anchor' },
+      { label: 'Pricing', to: '/#pricing', kind: 'anchor' },
+      { label: 'Verify a credential', to: '/verify', kind: 'route' },
     ],
   },
   {
     heading: 'Company',
     links: [
-      { label: 'About', href: '#' },
-      { label: 'Contact', href: '#' },
-      { label: 'Privacy', href: '#' },
+      { label: 'About', to: '/about', kind: 'route' },
+      { label: 'Contact', to: 'mailto:support@getlearnable.org', kind: 'external' },
+      { label: 'Privacy', to: '/privacy', kind: 'route' },
     ],
   },
 ]
+
+function FooterLink({ link }) {
+  const cls = 'text-sm text-slate-700 transition-colors hover:text-ink-navy'
+  if (link.kind === 'route') {
+    return (
+      <Link to={link.to} className={cls}>
+        {link.label}
+      </Link>
+    )
+  }
+  return (
+    <a href={link.to} className={cls}>
+      {link.label}
+    </a>
+  )
+}
 
 export default function Footer() {
   return (
@@ -38,13 +56,7 @@ export default function Footer() {
                 {col.heading}
               </div>
               {col.links.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-sm text-slate-700 transition-colors hover:text-ink-navy"
-                >
-                  {link.label}
-                </a>
+                <FooterLink key={link.label} link={link} />
               ))}
             </div>
           ))}
