@@ -65,4 +65,7 @@ export const api = {
   // credentials
   certificates: () => req('/api/certificates'),
   verifyCred: (credId) => req(`/api/verify/${credId}`),
+
+  // admin
+  adminOverview: () => req('/api/admin/overview'),
 }
