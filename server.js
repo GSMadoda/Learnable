@@ -69,10 +69,13 @@ const anthropic = ANTHROPIC_KEY ? new Anthropic({ apiKey: ANTHROPIC_KEY }) : nul
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
 
 // ---- Dodo Payments ----
-const DODO_KEY = process.env.DODO_PAYMENTS_API_KEY;
-const DODO_PRODUCT_ID = process.env.DODO_PRODUCT_ID;
+// Trim env values so stray whitespace/quotes can't break auth or the product lookup.
+const DODO_KEY = (process.env.DODO_PAYMENTS_API_KEY || "").trim() || undefined;
+const DODO_PRODUCT_ID = (process.env.DODO_PRODUCT_ID || "").trim() || undefined;
 const DODO_WEBHOOK_SECRET = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
-const DODO_BASE = process.env.DODO_MODE === "live" ? "https://live.dodopayments.com" : "https://test.dodopayments.com";
+// Normalize mode (case/whitespace-insensitive) so "Live"/" live " still selects live.
+const DODO_MODE = (process.env.DODO_MODE || "").trim().toLowerCase();
+const DODO_BASE = DODO_MODE === "live" ? "https://live.dodopayments.com" : "https://test.dodopayments.com";
 const DODO_COUNTRY = process.env.DODO_COUNTRY || "ZA";
 // Pull a human-readable reason out of a Dodo error response (its shape varies).
 function dodoErrorDetail(data) {
@@ -99,6 +102,7 @@ const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || 7);
 
 if (!ANTHROPIC_KEY) console.warn("[warn] ANTHROPIC_API_KEY not set — using sample fallbacks.");
 if (!DODO_KEY || !DODO_PRODUCT_ID) console.warn("[warn] Dodo not fully configured — enrollment runs in DEV MODE (simulated payment).");
+else console.log(`[dodo] mode=${DODO_MODE === "live" ? "live" : "test"} base=${DODO_BASE} product=${DODO_PRODUCT_ID}`);
 
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
