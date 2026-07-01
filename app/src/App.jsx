@@ -10,13 +10,27 @@ import Dashboard from './pages/Dashboard.jsx'
 import ProgramView from './pages/ProgramView.jsx'
 import Course from './pages/Course.jsx'
 import Verify from './pages/Verify.jsx'
+import VerifyLanding from './pages/VerifyLanding.jsx'
 import Alumni from './pages/Alumni.jsx'
 import Profile from './pages/Profile.jsx'
+import About from './pages/About.jsx'
+import Privacy from './pages/Privacy.jsx'
 
 // Handles the redirect/query-param flows the backend uses (it always redirects
 // back to `/` with a param): magic-link, password reset, payment return, oauth error.
+// Smoothly scroll to a hash target (e.g. arriving at "/#pricing" from another page).
+function ScrollToHash() {
+  const location = useLocation()
+  useEffect(() => {
+    if (!location.hash) return
+    const el = document.getElementById(location.hash.slice(1))
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+  }, [location])
+  return null
+}
+
 function FlowHandler() {
-  const { refresh } = useAuth()
+  const { refresh, setUser } = useAuth()
   const { openAuth, toast } = useUI()
   const navigate = useNavigate()
   const location = useLocation()
@@ -41,7 +55,7 @@ function FlowHandler() {
           clean()
         } else if (magic) {
           const { user } = await api.magicVerify(magic)
-          await refresh()
+          setUser(user) // trust the verify response so /app doesn't race the cookie read
           clean()
           toast(`Welcome, ${user.name.split(' ')[0]}.`, 'success')
           navigate('/app')
@@ -105,9 +119,13 @@ export default function App() {
   return (
     <>
       <FlowHandler />
+      <ScrollToHash />
       <AuthModal />
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/verify" element={<VerifyLanding />} />
         <Route path="/verify/:credId" element={<Verify />} />
         <Route
           path="/app"

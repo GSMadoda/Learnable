@@ -19,6 +19,7 @@ export default function AuthModal() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [devLink, setDevLink] = useState('')
 
   if (!auth) return null
 
@@ -28,6 +29,7 @@ export default function AuthModal() {
   function switchMode(next) {
     setError('')
     setNotice('')
+    setDevLink('')
     setMode(next)
   }
 
@@ -35,6 +37,7 @@ export default function AuthModal() {
     e.preventDefault()
     setError('')
     setNotice('')
+    setDevLink('')
     setBusy(true)
     try {
       if (effMode === 'signup') {
@@ -51,19 +54,20 @@ export default function AuthModal() {
         navigate('/app')
       } else if (effMode === 'magic') {
         const res = await api.magic({ email, name })
-        setNotice(
-          res.devLink
-            ? 'Email is off in this environment — use the dev link below.'
-            : 'Check your inbox for a sign-in link.',
-        )
-        if (res.devLink) setNotice(`Dev sign-in link: ${res.devLink}`)
+        if (res.devLink) {
+          setNotice('Email isn’t configured here — use this sign-in link:')
+          setDevLink(res.devLink)
+        } else {
+          setNotice('Check your inbox for a sign-in link.')
+        }
       } else if (effMode === 'forgot') {
         const res = await api.forgot({ email })
-        setNotice(
-          res.devLink
-            ? `Dev reset link: ${res.devLink}`
-            : 'If that email has an account, a reset link is on its way.',
-        )
+        if (res.devLink) {
+          setNotice('Email isn’t configured here — use this reset link:')
+          setDevLink(res.devLink)
+        } else {
+          setNotice('If that email has an account, a reset link is on its way.')
+        }
       } else if (effMode === 'reset') {
         await api.reset({ token: resetToken, password })
         closeAuth()
@@ -177,6 +181,14 @@ export default function AuthModal() {
         {notice && (
           <div className="break-words rounded-control border border-line bg-slate-50 px-3 py-2 text-[13px] text-slate-700">
             {notice}
+            {devLink && (
+              <a
+                href={devLink}
+                className="mt-1 block break-all font-semibold text-blue underline"
+              >
+                {devLink}
+              </a>
+            )}
           </div>
         )}
 
