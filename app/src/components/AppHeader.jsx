@@ -4,7 +4,7 @@ import { Menu, X } from 'lucide-react'
 import { useAuth } from '../state.jsx'
 import { LogoMark, Wordmark } from './Brand.jsx'
 
-const navLinks = [
+const baseLinks = [
   { to: '/app', label: 'Dashboard' },
   { to: '/alumni', label: 'Alumni' },
   { to: '/profile', label: 'Profile' },
@@ -16,6 +16,9 @@ export default function AppHeader() {
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
+
+  // Admins get an extra Admin link.
+  const navLinks = user?.admin ? [...baseLinks, { to: '/admin', label: 'Admin' }] : baseLinks
 
   async function onSignOut() {
     await logout()

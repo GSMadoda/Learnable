@@ -16,6 +16,9 @@ const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString("he
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 const PROD = process.env.NODE_ENV === "production";
 const PRICE = Number(process.env.PRICE || 35);
+// Admin access: comma-separated emails allowed into the admin panel (set on the host).
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+const isAdmin = (email) => ADMIN_EMAILS.includes(String(email || "").toLowerCase());
 
 // Google OAuth
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -113,12 +116,14 @@ const signToken = (u) => jwt.sign({ id: u.id, email: u.email, name: u.name }, JW
 const setAuthCookie = (res, t) => res.cookie("token", t, { httpOnly: true, sameSite: "lax", secure: PROD, maxAge: 2592000000 });
 function currentUser(req) { const t = req.cookies?.token; if (!t) return null; try { return jwt.verify(t, JWT_SECRET); } catch { return null; } }
 function requireAuth(req, res, next) { const u = currentUser(req); if (!u) return res.status(401).json({ error: "Please sign in." }); req.user = u; next(); }
+function requireAdmin(req, res, next) { const u = currentUser(req); if (!u) return res.status(401).json({ error: "Please sign in." }); if (!isAdmin(u.email)) return res.status(403).json({ error: "Not authorized." }); req.user = u; next(); }
 function credId() { const s = () => crypto.randomBytes(2).toString("hex").toUpperCase(); return `LRN-${s()}-${s()}`; }
 async function fullUser(id) {
   const u = await store.users.findOne({ id: Number(id) });
   if (!u) return null;
   return { id: Number(u.id), name: u.name, email: u.email, avatar: u.avatar || null,
-    headline: u.headline || "", education: u.education || "", linkedin: u.linkedin || "", alumniVisible: !!u.alumni_visible };
+    headline: u.headline || "", education: u.education || "", linkedin: u.linkedin || "", alumniVisible: !!u.alumni_visible,
+    admin: isAdmin(u.email) };
 }
 function rowProgram(r) {
   return { id: r.id, goal: r.goal, why: r.why, title: r.title, subtitle: r.subtitle, level: r.level,
@@ -615,6 +620,82 @@ app.get("/api/verify/:credId", async (req, res) => {
   const c = await store.certificates.findOne({ cred_id: req.params.credId });
   if (!c) return res.json({ valid: false });
   res.json({ valid: true, name: c.name, programTitle: c.program_title, skills: JSON.parse(c.skills || "[]"), issuedAt: c.issued_at });
+});
+
+/* ----------------------------- admin ----------------------------- */
+// Learner overview: who has started (trial or paid), how far they are, and how to reach them.
+app.get("/api/admin/overview", requireAdmin, async (req, res) => {
+  try {
+    const [users, programs, enrollments, progress, certs] = await Promise.all([
+      store.users.find({}).toArray(),
+      store.programs.find({}).toArray(),
+      store.enrollments.find({}).toArray(),
+      store.progress.find({}).toArray(),
+      store.certificates.find({}).toArray(),
+    ]);
+    const userById = new Map(users.map((u) => [u.id, u]));
+    const progById = new Map(programs.map((p) => [p.id, p]));
+    const key = (uid, pid) => `${uid}:${pid}`;
+
+    // Completed-lesson counts per (user, program).
+    const doneMap = new Map();
+    for (const pr of progress) {
+      if (!pr.completed) continue;
+      const k = key(pr.user_id, pr.program_id);
+      if (!doneMap.has(k)) doneMap.set(k, { lessons: 0, capstone: false });
+      if (pr.lesson_key === "capstone") doneMap.get(k).capstone = true;
+      else doneMap.get(k).lessons++;
+    }
+    const certSet = new Set(certs.map((c) => key(c.user_id, c.program_id)));
+    const now = Date.now();
+
+    const rows = enrollments
+      .filter((e) => e.status === "trial" || e.status === "paid")
+      .map((e) => {
+        const u = userById.get(e.user_id) || {};
+        const p = progById.get(e.program_id) || {};
+        let total = 0;
+        try { JSON.parse(p.modules || "[]").forEach((m) => (m.lessons || []).forEach(() => total++)); } catch {}
+        const d = doneMap.get(key(e.user_id, e.program_id)) || { lessons: 0, capstone: false };
+        const trialLive = e.status === "trial" && e.trial_expires && new Date(e.trial_expires).getTime() > now;
+        const status = e.status === "paid" ? "paid" : trialLive ? "trial" : "trial_expired";
+        const done = d.lessons + (d.capstone ? 1 : 0);
+        const percent = total ? Math.round((done / (total + 1)) * 100) : 0;
+        return {
+          name: u.name || "—",
+          email: u.email || "—",
+          program: p.title || `Program #${e.program_id}`,
+          programId: e.program_id,
+          status,
+          lessonsDone: d.lessons,
+          totalLessons: total,
+          capstoneDone: d.capstone,
+          percent,
+          minutes: e.minutes_period || 0,
+          trialDaysLeft: trialLive ? Math.max(0, Math.ceil((new Date(e.trial_expires).getTime() - now) / 86400000)) : null,
+          hasCredential: certSet.has(key(e.user_id, e.program_id)),
+          startedAt: e.created_at || null,
+          lastActive: e.last_active || null,
+        };
+      });
+
+    rows.sort((a, b) => new Date(b.lastActive || b.startedAt || 0) - new Date(a.lastActive || a.startedAt || 0));
+
+    const stats = {
+      users: users.length,
+      programs: programs.length,
+      learners: rows.length,
+      activeTrials: rows.filter((r) => r.status === "trial").length,
+      paid: rows.filter((r) => r.status === "paid").length,
+      expiredTrials: rows.filter((r) => r.status === "trial_expired").length,
+      credentials: certs.length,
+      completed: rows.filter((r) => r.percent >= 100).length,
+    };
+    res.json({ stats, rows });
+  } catch (e) {
+    console.error("admin overview:", e.message);
+    res.status(500).json({ error: "Could not load admin data." });
+  }
 });
 
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));

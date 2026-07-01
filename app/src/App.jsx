@@ -13,6 +13,7 @@ import Verify from './pages/Verify.jsx'
 import VerifyLanding from './pages/VerifyLanding.jsx'
 import Alumni from './pages/Alumni.jsx'
 import Profile from './pages/Profile.jsx'
+import Admin from './pages/Admin.jsx'
 import About from './pages/About.jsx'
 import Privacy from './pages/Privacy.jsx'
 
@@ -109,6 +110,13 @@ function Protected({ children }) {
   return children
 }
 
+// Admin-only gate (used inside Protected, so the user is already loaded).
+function AdminGate({ children }) {
+  const { user } = useAuth()
+  if (!user?.admin) return <Navigate to="/app" replace />
+  return children
+}
+
 // Shared shell (header + content) for the signed-in app pages.
 function AppShell({ children }) {
   return (
@@ -176,6 +184,18 @@ export default function App() {
               <AppShell>
                 <Profile />
               </AppShell>
+            </Protected>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <Protected>
+              <AdminGate>
+                <AppShell>
+                  <Admin />
+                </AppShell>
+              </AdminGate>
             </Protected>
           }
         />
