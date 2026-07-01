@@ -104,13 +104,13 @@ export function UIProvider({ children }) {
 function Toaster({ toasts, onDismiss }) {
   if (!toasts.length) return null
   return (
-    <div className="fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-3 z-[100] flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:right-4 sm:items-end">
       {toasts.map((t) => (
         <button
           key={t.id}
           type="button"
           onClick={() => onDismiss(t.id)}
-          className={`pointer-events-auto w-full max-w-[420px] rounded-btn px-4 py-3 text-left text-sm font-medium shadow-pricing transition-colors ${
+          className={`pointer-events-auto w-full max-w-[380px] rounded-btn px-4 py-3 text-left text-sm font-medium shadow-pricing transition-colors ${
             t.type === 'error'
               ? 'bg-ink-navy text-white'
               : t.type === 'success'

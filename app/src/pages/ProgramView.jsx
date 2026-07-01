@@ -41,6 +41,9 @@ export default function ProgramView() {
     try {
       const res = await api.enroll(id)
       if (res.checkout_url) {
+        // Remember which program we're buying so the ?ref return can drop the
+        // learner straight into their course (verify only tells us "paid").
+        sessionStorage.setItem('lrn_pending_program', String(id))
         window.location.href = res.checkout_url // hosted Dodo checkout
         return
       }

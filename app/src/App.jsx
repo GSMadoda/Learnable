@@ -30,14 +30,16 @@ function ScrollToHash() {
 }
 
 function FlowHandler() {
-  const { refresh, setUser } = useAuth()
+  const { loading, refresh, setUser } = useAuth()
   const { openAuth, toast } = useUI()
   const navigate = useNavigate()
   const location = useLocation()
   const handled = useRef(false)
 
   useEffect(() => {
-    if (handled.current) return
+    // Wait for the initial auth bootstrap (/api/auth/me) to settle first, so its
+    // result can't land after — and overwrite — the user we set from a flow below.
+    if (loading || handled.current) return
     const params = new URLSearchParams(location.search)
     const magic = params.get('magic')
     const reset = params.get('reset')
@@ -68,7 +70,9 @@ function FlowHandler() {
           if (res.paid) {
             await refresh()
             toast('Payment confirmed — you are enrolled.', 'success')
-            navigate('/app')
+            const pending = sessionStorage.getItem('lrn_pending_program')
+            sessionStorage.removeItem('lrn_pending_program')
+            navigate(pending ? `/course/${pending}` : '/app')
           } else {
             toast('Payment not confirmed yet. If you completed checkout, refresh in a moment.', 'error')
           }
@@ -79,7 +83,7 @@ function FlowHandler() {
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loading])
 
   return null
 }

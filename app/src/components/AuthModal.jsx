@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { useAuth, useUI } from '../state.jsx'
@@ -20,6 +20,17 @@ export default function AuthModal() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [devLink, setDevLink] = useState('')
+
+  // The modal is always mounted (renders null when closed), so sync the working
+  // mode + clear transient messages each time it is (re)opened with a new intent.
+  useEffect(() => {
+    if (auth) {
+      setMode(auth.mode || 'login')
+      setError('')
+      setNotice('')
+      setDevLink('')
+    }
+  }, [auth])
 
   if (!auth) return null
 
