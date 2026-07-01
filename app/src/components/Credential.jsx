@@ -55,7 +55,7 @@ export default function Credential() {
             A credential you can actually point to.
           </h2>
           <p className="mb-[26px] max-w-[460px] text-lg leading-[1.6] text-slate-700">
-            Finish the course, pass the test Claude writes from your curriculum, and earn a
+            Finish the course, pass the test Learnable writes from your curriculum, and earn a
             certificate that's more than a badge.
           </p>
           <div className="flex flex-col gap-3.5">

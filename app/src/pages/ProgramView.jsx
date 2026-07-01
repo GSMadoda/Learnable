@@ -245,7 +245,7 @@ export default function ProgramView() {
             <ul className="mt-5 grid grid-cols-1 gap-2 text-[14px] text-slate-700 sm:grid-cols-2">
               {[
                 'AI-tutored, focused study sessions',
-                'A test Claude writes from your curriculum',
+                'A test Learnable writes from your curriculum',
                 'A verifiable credential when you enroll',
                 'Lifetime access once you pay',
               ].map((f) => (

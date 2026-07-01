@@ -90,7 +90,7 @@ export default function Hero() {
             Commit to the session. Learn until the timer ends.
           </h1>
           <p className="mb-[30px] max-w-[480px] text-[17px] leading-[1.6] text-slate-700 sm:text-[19px]">
-            Pick any subject. Claude builds your curriculum, tutors you in real time, and locks
+            Pick any subject. Learnable builds your curriculum, tutors you in real time, and locks
             you into focused sessions — then tests you and issues a credential you can point to.
           </p>
           <div className="flex flex-wrap items-center gap-3.5">

@@ -138,7 +138,7 @@ export default function CurriculumDemo({ defaultSubject = 'python' }) {
               </button>
             </div>
             <p className="mt-2 text-center text-[13px] text-slate-400 sm:text-left">
-              Free to generate — Claude writes a full curriculum you can review before enrolling.
+              Free to generate — Learnable writes a full curriculum you can review before enrolling.
             </p>
           </div>
         </div>
