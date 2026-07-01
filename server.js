@@ -74,6 +74,20 @@ const DODO_PRODUCT_ID = process.env.DODO_PRODUCT_ID;
 const DODO_WEBHOOK_SECRET = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
 const DODO_BASE = process.env.DODO_MODE === "live" ? "https://live.dodopayments.com" : "https://test.dodopayments.com";
 const DODO_COUNTRY = process.env.DODO_COUNTRY || "ZA";
+// Pull a human-readable reason out of a Dodo error response (its shape varies).
+function dodoErrorDetail(data) {
+  if (!data || typeof data !== "object") return "";
+  if (typeof data.message === "string") return data.message;
+  if (typeof data.error === "string") return data.error;
+  if (data.error && typeof data.error.message === "string") return data.error.message;
+  if (typeof data.detail === "string") return data.detail;
+  if (Array.isArray(data.detail) && data.detail.length) {
+    const d = data.detail[0];
+    const where = Array.isArray(d.loc) ? d.loc.join(".") + ": " : "";
+    return d && (d.msg || d.message) ? `${where}${d.msg || d.message}` : JSON.stringify(d);
+  }
+  return "";
+}
 
 // Study rule
 const STUDY_MINUTES_REQUIRED = Number(process.env.STUDY_MINUTES_REQUIRED || 30);
@@ -395,11 +409,15 @@ app.post("/api/programs/:id/enroll", requireAuth, async (req, res) => {
         metadata: { reference, program_id: String(program.id), user_id: String(req.user.id) },
       }),
     });
-    const data = await r2.json();
-    if (!r2.ok || !data.payment_link) { console.error("dodo create:", data); return res.status(502).json({ error: "Could not start payment." }); }
+    const data = await r2.json().catch(() => ({}));
+    if (!r2.ok || !data.payment_link) {
+      console.error("dodo create failed:", r2.status, JSON.stringify(data));
+      const detail = dodoErrorDetail(data) || `HTTP ${r2.status}`;
+      return res.status(502).json({ error: `Could not start payment: ${detail}` });
+    }
     await store.enrollments.updateOne({ reference }, { $set: { payment_id: data.payment_id || null } });
     res.json({ checkout_url: data.payment_link, reference });
-  } catch (e) { console.error("dodo enroll:", e.message); res.status(502).json({ error: "Could not start payment. Try again." }); }
+  } catch (e) { console.error("dodo enroll:", e.message); res.status(502).json({ error: `Could not start payment: ${e.message}` }); }
 });
 
 // Start a free trial (no payment) — full access for TRIAL_DAYS, one per user.
