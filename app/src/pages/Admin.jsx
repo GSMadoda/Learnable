@@ -61,8 +61,14 @@ function StatusPill({ status, daysLeft }) {
         Trial{daysLeft != null ? ` · ${daysLeft}d` : ''}
       </span>
     )
+  if (status === 'signed_up')
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500">
+        Signed up
+      </span>
+    )
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500">
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-slate-400">
       Expired
     </span>
   )
@@ -70,10 +76,18 @@ function StatusPill({ status, daysLeft }) {
 
 function outreach(r) {
   const first = (r.name || '').split(' ')[0] || 'there'
-  const subject = `Learnable — how's "${r.program}" going?`
-  const body = `Hi ${first},\n\nI saw you started "${r.program}" on Learnable${
-    r.percent ? ` and you're ${r.percent}% in` : ''
-  }. I'd love to help you get the most out of it — is there anything you're stuck on or any feedback so far?\n\nHappy to answer anything.\n\n— The Learnable team`
+  let subject, body
+  if (r.status === 'signed_up') {
+    subject = 'Welcome to Learnable — need a hand getting started?'
+    body = `Hi ${first},\n\nThanks for signing up to Learnable!${
+      r.plansGenerated ? ' I saw you generated a plan' : ''
+    } I'd love to help you pick a course and get going — is there anything you're looking to learn, or anything I can help with?\n\n— The Learnable team`
+  } else {
+    subject = `Learnable — how's "${r.program}" going?`
+    body = `Hi ${first},\n\nI saw you started "${r.program}" on Learnable${
+      r.percent ? ` and you're ${r.percent}% in` : ''
+    }. I'd love to help you get the most out of it — is there anything you're stuck on or any feedback so far?\n\nHappy to answer anything.\n\n— The Learnable team`
+  }
   return `mailto:${r.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
 
@@ -111,6 +125,7 @@ export default function Admin() {
       if (filter === 'trial' && r.status !== 'trial') return false
       if (filter === 'paid' && r.status !== 'paid') return false
       if (filter === 'expired' && r.status !== 'trial_expired') return false
+      if (filter === 'signedup' && r.status !== 'signed_up') return false
       if (filter === 'attention' && !needsHelp(r)) return false
       if (term && !`${r.name} ${r.email} ${r.program}`.toLowerCase().includes(term)) return false
       return true
@@ -129,6 +144,7 @@ export default function Admin() {
   const chips = [
     { key: 'all', label: `All (${rows.length})` },
     { key: 'attention', label: `Needs help (${attention})` },
+    { key: 'signedup', label: `Not started (${s.signedUp ?? 0})` },
     { key: 'trial', label: `Trials (${s.activeTrials})` },
     { key: 'paid', label: `Paid (${s.paid})` },
     { key: 'expired', label: `Expired (${s.expiredTrials})` },
@@ -218,26 +234,38 @@ export default function Admin() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-slate-700">{r.program}</td>
+                    <td className="px-4 py-3.5">
+                      {r.program ? (
+                        <span className="text-slate-700">{r.program}</span>
+                      ) : (
+                        <span className="text-slate-400">
+                          {r.plansGenerated
+                            ? `${r.plansGenerated} plan${r.plansGenerated === 1 ? '' : 's'} generated`
+                            : '—'}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5">
                       <StatusPill status={r.status} daysLeft={r.trialDaysLeft} />
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
-                          <div
-                            className={`h-full rounded-full ${
-                              r.percent >= 100 ? 'bg-gold' : 'bg-blue'
-                            }`}
-                            style={{ width: `${r.percent}%` }}
-                          />
+                      {r.status === 'signed_up' ? (
+                        <span className="text-[12.5px] text-slate-400">Not started</span>
+                      ) : (
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className={`h-full rounded-full ${r.percent >= 100 ? 'bg-gold' : 'bg-blue'}`}
+                              style={{ width: `${r.percent}%` }}
+                            />
+                          </div>
+                          <span className="whitespace-nowrap text-[12.5px] text-slate-500">
+                            {r.percent}% · {r.lessonsDone}/{r.totalLessons}
+                            {r.capstoneDone ? ' + cap' : ''}
+                          </span>
+                          {r.hasCredential && <Award size={14} className="text-gold-text" title="Credentialed" />}
                         </div>
-                        <span className="whitespace-nowrap text-[12.5px] text-slate-500">
-                          {r.percent}% · {r.lessonsDone}/{r.totalLessons}
-                          {r.capstoneDone ? ' + cap' : ''}
-                        </span>
-                        {r.hasCredential && <Award size={14} className="text-gold-text" title="Credentialed" />}
-                      </div>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-slate-500">
                       {ago(r.lastActive || r.startedAt)}

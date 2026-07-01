@@ -649,7 +649,8 @@ app.get("/api/admin/overview", requireAdmin, async (req, res) => {
     const certSet = new Set(certs.map((c) => key(c.user_id, c.program_id)));
     const now = Date.now();
 
-    const rows = enrollments
+    // Learners: one row per trial/paid enrollment.
+    const enrollmentRows = enrollments
       .filter((e) => e.status === "trial" || e.status === "paid")
       .map((e) => {
         const u = userById.get(e.user_id) || {};
@@ -676,20 +677,49 @@ app.get("/api/admin/overview", requireAdmin, async (req, res) => {
           hasCredential: certSet.has(key(e.user_id, e.program_id)),
           startedAt: e.created_at || null,
           lastActive: e.last_active || null,
+          plansGenerated: null,
         };
       });
 
+    // Sign-ups who haven't started any course yet (prime onboarding outreach).
+    const startedIds = new Set(
+      enrollments.filter((e) => e.status === "trial" || e.status === "paid").map((e) => e.user_id),
+    );
+    const plansByUser = new Map();
+    for (const p of programs) if (p.user_id != null) plansByUser.set(p.user_id, (plansByUser.get(p.user_id) || 0) + 1);
+    const signupRows = users
+      .filter((u) => !startedIds.has(u.id))
+      .map((u) => ({
+        name: u.name || "—",
+        email: u.email || "—",
+        program: null,
+        programId: null,
+        status: "signed_up",
+        lessonsDone: 0,
+        totalLessons: 0,
+        capstoneDone: false,
+        percent: 0,
+        minutes: 0,
+        trialDaysLeft: null,
+        hasCredential: false,
+        startedAt: u.created_at || null,
+        lastActive: null,
+        plansGenerated: plansByUser.get(u.id) || 0,
+      }));
+
+    const rows = [...enrollmentRows, ...signupRows];
     rows.sort((a, b) => new Date(b.lastActive || b.startedAt || 0) - new Date(a.lastActive || a.startedAt || 0));
 
     const stats = {
       users: users.length,
       programs: programs.length,
-      learners: rows.length,
-      activeTrials: rows.filter((r) => r.status === "trial").length,
-      paid: rows.filter((r) => r.status === "paid").length,
-      expiredTrials: rows.filter((r) => r.status === "trial_expired").length,
+      learners: enrollmentRows.length,
+      activeTrials: enrollmentRows.filter((r) => r.status === "trial").length,
+      paid: enrollmentRows.filter((r) => r.status === "paid").length,
+      expiredTrials: enrollmentRows.filter((r) => r.status === "trial_expired").length,
+      signedUp: signupRows.length,
       credentials: certs.length,
-      completed: rows.filter((r) => r.percent >= 100).length,
+      completed: enrollmentRows.filter((r) => r.percent >= 100).length,
     };
     res.json({ stats, rows });
   } catch (e) {
