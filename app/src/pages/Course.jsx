@@ -195,7 +195,8 @@ export default function Course() {
         </div>
       )}
 
-      <StudyMeter study={study} />
+      {/* Study window applies to paid courses; during a trial the trial countdown is the meter. */}
+      {!trial && <StudyMeter study={study} />}
 
       {/* Progress bar */}
       <div className="mb-8">

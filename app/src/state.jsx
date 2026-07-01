@@ -104,7 +104,7 @@ export function UIProvider({ children }) {
 function Toaster({ toasts, onDismiss }) {
   if (!toasts.length) return null
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-3 z-[100] flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:right-4 sm:items-end">
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:right-4 sm:items-end">
       {toasts.map((t) => (
         <button
           key={t.id}
